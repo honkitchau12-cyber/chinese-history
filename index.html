@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>中國歷史練習系統</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f0e6d2;--paper-2:#e7d9bd;--ink:#241d16;--ink-soft:#5d5042;
+  --cinnabar:#a8322d;--cinnabar-deep:#822621;--gold:#a8853f;
+  --correct:#3f7048;--wrong:#b23a35;--line:rgba(36,29,22,.16);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:"Noto Serif TC",serif;color:var(--ink);
+  background:radial-gradient(circle at 20% 15%, rgba(168,50,45,.05), transparent 40%),radial-gradient(circle at 85% 80%, rgba(168,133,63,.08), transparent 45%),var(--paper);
+  background-attachment:fixed;display:flex;justify-content:center;align-items:flex-start;min-height:100%;
+}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");}
+.app{position:relative;z-index:1;width:100%;max-width:540px;min-height:100vh;
+  background:linear-gradient(180deg, rgba(255,250,240,.55), rgba(255,250,240,.15));box-shadow:0 0 60px rgba(36,29,22,.12);display:flex;flex-direction:column;}
+.screen{display:none;flex-direction:column;flex:1;padding:26px 22px 32px;animation:fade .45s ease;}
+.screen.active{display:flex;}
+@keyframes fade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.seal{width:64px;height:64px;border-radius:9px;background:var(--cinnabar);color:#fbeede;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:34px;line-height:1;box-shadow:0 4px 14px rgba(130,38,33,.4), inset 0 0 0 2px rgba(255,255,255,.18);letter-spacing:-2px;transform:rotate(-2deg);}
+.brand{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:14px;}
+.school{font-size:14px;letter-spacing:6px;color:var(--ink-soft);font-family:"Noto Sans TC",sans-serif;}
+.title{font-size:30px;font-weight:900;letter-spacing:3px;text-align:center;line-height:1.3;}
+.subtitle{font-size:13px;color:var(--ink-soft);letter-spacing:2px;font-family:"Noto Sans TC",sans-serif;}
+.divider{width:54px;height:3px;background:var(--cinnabar);margin:6px auto;border-radius:2px;}
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;}
+.hint{margin:20px 0 6px;color:var(--ink-soft);font-size:14px;letter-spacing:2px;}
+.btn{border:none;cursor:pointer;font-family:"Noto Serif TC",serif;font-weight:700;font-size:17px;letter-spacing:3px;padding:15px 20px;border-radius:12px;transition:transform .12s, box-shadow .2s, background .2s;width:100%;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--cinnabar);color:#fbeede;box-shadow:0 6px 16px rgba(130,38,33,.32);}
+.btn-primary:hover{background:var(--cinnabar-deep);}
+.btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+.btn-ghost:hover{background:rgba(36,29,22,.05);}
+.btn-row{display:flex;gap:12px;width:100%;margin-top:14px;}
+.btn-row .btn{margin-top:0;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.topbar .back{font-size:14px;color:var(--ink-soft);background:none;border:none;cursor:pointer;font-family:"Noto Sans TC",sans-serif;}
+.topbar h2{font-size:20px;letter-spacing:3px;font-weight:900;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px;letter-spacing:2px;font-family:"Noto Sans TC",sans-serif;}
+.field input{width:100%;padding:13px 14px;font-size:16px;border:1.5px solid var(--line);border-radius:10px;background:rgba(255,252,245,.7);color:var(--ink);font-family:"Noto Serif TC",serif;}
+.field input:focus{outline:none;border-color:var(--cinnabar);}
+.section-label{font-size:14px;color:var(--ink-soft);letter-spacing:3px;margin:18px 0 10px;display:flex;justify-content:space-between;align-items:center;font-family:"Noto Sans TC",sans-serif;}
+.section-label .all{color:var(--cinnabar);cursor:pointer;font-size:13px;}
+.chips{display:flex;flex-wrap:wrap;gap:9px;}
+.chip{padding:9px 15px;border:1.5px solid var(--line);border-radius:999px;cursor:pointer;font-size:14px;letter-spacing:1px;background:rgba(255,252,245,.5);transition:.18s;user-select:none;}
+.chip.on{background:var(--cinnabar);color:#fbeede;border-color:var(--cinnabar);}
+.count-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;}
+.count-grid .chip{text-align:center;padding:12px 4px;justify-content:center;}
+.course-list{display:flex;flex-direction:column;gap:12px;}
+.course-card{border:1.5px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;background:rgba(255,252,245,.5);transition:.18s;}
+.course-card:hover,.course-card:active{background:var(--cinnabar);border-color:var(--cinnabar);}
+.course-card:hover .course-name,.course-card:active .course-name{color:#fbeede;}
+.course-card:hover .course-meta,.course-card:active .course-meta{color:#f0d9c4;}
+.course-name{font-size:18px;font-weight:700;letter-spacing:2px;color:var(--ink);}
+.course-meta{font-size:13px;color:var(--ink-soft);letter-spacing:1px;margin-top:6px;font-family:"Noto Sans TC",sans-serif;}
+.progress-wrap{margin-bottom:16px;}
+.progress-meta{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-soft);margin-bottom:7px;font-family:"Noto Sans TC",sans-serif;}
+.progress-meta .score b{color:var(--cinnabar);font-size:15px;}
+.progress-bar{height:6px;background:rgba(36,29,22,.1);border-radius:6px;overflow:hidden;}
+.progress-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--cinnabar),var(--gold));border-radius:6px;transition:width .35s;}
+.q-topic{display:inline-block;font-size:12px;color:var(--cinnabar);border:1px solid var(--cinnabar);border-radius:6px;padding:2px 9px;margin-bottom:12px;letter-spacing:2px;font-family:"Noto Sans TC",sans-serif;align-self:flex-start;}
+.q-text{font-size:19px;line-height:1.65;font-weight:500;margin-bottom:20px;white-space:pre-wrap;}
+.options{display:flex;flex-direction:column;gap:11px;}
+.option{display:flex;gap:12px;align-items:flex-start;padding:14px 15px;border:1.5px solid var(--line);border-radius:12px;background:rgba(255,252,245,.6);cursor:pointer;transition:.18s;font-size:16px;line-height:1.5;}
+.option:hover{border-color:var(--cinnabar);}
+.option .mk{font-weight:900;color:var(--cinnabar);min-width:20px;}
+.option.correct{background:rgba(63,112,72,.14);border-color:var(--correct);}
+.option.correct .mk{color:var(--correct);}
+.option.wrong{background:rgba(178,58,53,.12);border-color:var(--wrong);}
+.option.wrong .mk{color:var(--wrong);}
+.option.locked{cursor:default;}
+.explain{margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(168,133,63,.12);border-left:4px solid var(--gold);font-size:14.5px;line-height:1.65;display:none;}
+.explain.show{display:block;animation:fade .35s;}
+.explain b{color:var(--cinnabar-deep);}
+.nav-row{display:flex;gap:12px;margin-top:auto;padding-top:22px;}
+.nav-row .btn{margin-top:0;}
+.nav-row .btn:disabled{opacity:.4;cursor:not-allowed;}
+.result-card{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;}
+.score-ring{width:170px;height:170px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:10px 0 18px;color:#fbeede;box-shadow:0 10px 30px rgba(130,38,33,.3);}
+.score-ring .big{font-size:46px;font-weight:900;line-height:1;}
+.score-ring .small{font-size:14px;letter-spacing:2px;margin-top:4px;font-family:"Noto Sans TC",sans-serif;}
+.verdict{font-size:22px;font-weight:700;letter-spacing:2px;}
+.verdict-sub{color:var(--ink-soft);font-size:14px;font-family:"Noto Sans TC",sans-serif;}
+.modal{display:none;position:fixed;inset:0;z-index:50;background:rgba(36,29,22,.55);align-items:center;justify-content:center;padding:20px;}
+.modal.show{display:flex;animation:fade .3s;}
+.modal-card{background:var(--paper);width:100%;max-width:480px;max-height:82vh;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.3);}
+.modal-head{background:var(--cinnabar);color:#fbeede;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;}
+.modal-head h3{font-size:19px;letter-spacing:3px;font-weight:900;}
+.modal-head .x{background:none;border:none;color:#fbeede;font-size:22px;cursor:pointer;line-height:1;}
+.lb-table{overflow-y:auto;padding:8px 0;}
+.lb-row{display:grid;grid-template-columns:46px 1fr 78px 70px;gap:6px;padding:11px 18px;align-items:center;font-size:14px;border-bottom:1px solid var(--line);}
+.lb-row.head{color:var(--ink-soft);font-size:12px;letter-spacing:2px;font-family:"Noto Sans TC",sans-serif;border-bottom:2px solid var(--line);}
+.lb-row .rank{font-weight:900;}
+.lb-row.top1 .rank{color:#c89a32;}.lb-row.top2 .rank{color:#9a9a9a;}.lb-row.top3 .rank{color:#b06b3a;}
+.lb-row .sc{font-weight:700;color:var(--cinnabar);text-align:right;}
+.lb-row .dt{color:var(--ink-soft);font-size:12px;text-align:right;font-family:"Noto Sans TC",sans-serif;}
+.lb-empty{padding:40px 20px;text-align:center;color:var(--ink-soft);font-size:14px;}
+.foot{text-align:center;font-size:11px;color:var(--ink-soft);letter-spacing:1px;margin-top:18px;font-family:"Noto Sans TC",sans-serif;opacity:.7;}
+</style>
+</head>
+<body>
+<div class="app">
+  <section id="screen-home" class="screen active">
+    <div class="hero">
+      <div class="seal">史</div>
+      <div class="brand">
+        <div class="school" id="schoolName">東華三院李嘉誠中學</div>
+        <h1 class="title">中國歷史練習系統</h1>
+        <div class="divider"></div>
+        <div class="subtitle">西周的封建 ‧ 春秋戰國的政治社會變動</div>
+      </div>
+      <div class="hint">請先填寫個人資料</div>
+    </div>
+    <button class="btn btn-primary" onclick="go('register')">開始練習</button>
+    <div class="btn-row"><button class="btn btn-ghost" onclick="openLeaderboard()">🏆 排行榜</button></div>
+    <div class="foot">DSE 程度 · 兩大課題 · 共 113 題</div>
+  </section>
+
+  <section id="screen-register" class="screen">
+    <div class="topbar"><button class="back" onclick="go('home')">‹ 返回</button><h2>學生登記</h2><span style="width:40px"></span></div>
+    <div class="field"><label>學生姓名 Name</label><input id="inName" placeholder="例：陳大文"></div>
+    <div class="field"><label>班別 Class</label><input id="inClass" placeholder="例：4A"></div>
+    <div class="field"><label>學號 No.</label><input id="inNo" placeholder="例：12" inputmode="numeric"></div>
+    <button class="btn btn-primary" style="margin-top:8px" onclick="confirmStudent()">確認進入</button>
+  </section>
+
+  <section id="screen-course" class="screen">
+    <div class="topbar"><button class="back" onclick="go('register')">‹ 返回</button><h2>選擇課題</h2><span style="width:40px"></span></div>
+    <div class="section-label">請選擇課題</div>
+    <div class="course-list" id="courseChips"></div>
+    <div class="foot">選定課題後，可再細選該課題內的範圍</div>
+  </section>
+
+  <section id="screen-setup" class="screen">
+    <div class="topbar"><button class="back" onclick="go('course')">‹ 返回</button><h2>選擇範圍</h2><span style="width:40px"></span></div>
+    <div class="section-label" id="courseLabel" style="letter-spacing:1px;justify-content:flex-start;color:var(--cinnabar)"></div>
+    <div class="section-label">範圍（考問重點）<span class="all" onclick="toggleAllTopics()">全選</span></div>
+    <div class="chips" id="topicChips"></div>
+    <div class="section-label" style="margin-top:24px">題目數量</div>
+    <div class="count-grid" id="countChips">
+      <div class="chip" data-c="20">20 題</div>
+      <div class="chip on" data-c="30">30 題</div>
+      <div class="chip" data-c="40">40 題</div>
+      <div class="chip" data-c="all">全部</div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:28px" onclick="startQuiz()">開始作答</button>
+    <div class="foot" id="poolInfo"></div>
+  </section>
+
+  <section id="screen-quiz" class="screen">
+    <div class="progress-wrap">
+      <div class="progress-meta"><span id="qPos">第 1 / 1 題</span><span class="score">得分 <b id="qScore">0</b></span></div>
+      <div class="progress-bar"><i id="qBar" style="width:0%"></i></div>
+    </div>
+    <div id="qTopic" class="q-topic"></div>
+    <div id="qText" class="q-text"></div>
+    <div id="qOptions" class="options"></div>
+    <div id="qExplain" class="explain"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" id="btnPrev" onclick="prevQ()">上一題</button>
+      <button class="btn btn-primary" id="btnNext" onclick="nextQ()">下一題</button>
+    </div>
+  </section>
+
+  <section id="screen-result" class="screen">
+    <div class="topbar"><span style="width:40px"></span><h2>練習完成</h2><span style="width:40px"></span></div>
+    <div class="result-card">
+      <div class="score-ring" id="scoreRing"><div class="big" id="resScore">0/0</div><div class="small" id="resPct">0%</div></div>
+      <div class="verdict" id="resVerdict"></div>
+      <div class="verdict-sub" id="resSub"></div>
+    </div>
+    <button class="btn btn-primary" onclick="openLeaderboard()">🏆 查看排行榜</button>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="reviewWrong()">查看錯題</button>
+      <button class="btn btn-ghost" onclick="go('home')">返回首頁</button>
+    </div>
+  </section>
+</div>
+
+<div class="modal" id="lbModal">
+  <div class="modal-card">
+    <div class="modal-head"><h3>🏆 最高分 Top 10</h3><button class="x" onclick="closeLeaderboard()">✕</button></div>
+    <div class="lb-table" id="lbTable"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   題庫 —— 老師只需修改下面 QUESTIONS 陣列
+   格式：{ topic:"範圍", q:"題目（多行用 \n 分隔）", options:["A項","B項","C項","D項"], answer:0, explain:"解析" }
+   answer 由 0 起計（0=A、1=B、2=C、3=D）
+   ============================================================ */
+const QUESTIONS = [
+  {topic:"立國背景",q:"周武王在哪一場戰役中擊敗商紂，從而建立周朝？",options:["鳴條之戰","涿鹿之戰","城濮之戰","牧野之戰"],answer:3,explain:"周族領袖姬發（武王）起兵討伐商紂，於牧野之戰擊敗商紂，建立周朝，定都鎬京，史稱西周。"},
+  {topic:"立國背景",q:"西周建立後，定都於？",options:["洛邑","鎬京","殷","商丘"],answer:1,explain:"武王滅商後定都鎬京（渭河流域）；第二次封建後鎬京稱「宗周」、洛邑稱「成周」。"},
+  {topic:"立國背景",q:"「封建」一詞的本義是？",options:["建立封閉的城邦","分封錢財","封土建國","封閉邊界"],answer:2,explain:"「封建」即「封土建國」，指周王把土地連同爵位、人民分封給宗室、功臣等，建立諸侯國。"},
+  {topic:"立國背景",q:"關於周人立國初年的形勢，下列哪些說法正確？\n(1) 周人勢力偏處西方渭河流域、岐山一帶\n(2) 殷商殘餘勢力仍佔據東方黃河下游廣大地區\n(3) 周武王已能一舉殲滅殷商殘餘勢力\n(4) 周室須設法控馭東方並防殷商殘餘勢力再起",options:["只有(2)、(3)及(4)","只有(1)及(3)","只有(1)、(2)及(4)","(1)、(2)、(3)及(4)"],answer:2,explain:"(1)(2)(4)正確；(3)錯誤——周人勢力有限，無力一舉殲滅殷商殘餘勢力，故須透過封建武裝拓殖、控馭東方。"},
+  {topic:"第一次封建",q:"西周第一次封建由誰推行？",options:["周武王","周公旦","周成王","周宣王"],answer:0,explain:"第一次封建在武王滅商建周後推行（約前1046年）；第二次封建才由周公旦於平定三監之亂後推行。"},
+  {topic:"第一次封建",q:"武王封紂王之子武庚於殷、讓他繼續管理商民，主要目的是？",options:["監視商民","安撫商遺民","酬謝功臣","屏藩周室"],answer:1,explain:"武王採懷柔（軟）政策，封武庚於殷，以示「不絕商祀」，消弭商遺民反抗情緒，屬安撫商遺民之舉。"},
+  {topic:"第一次封建",q:"武王以「興滅國，繼絕世」為名，分封炎帝、黃帝、堯、舜、禹等前代共主之後，用意是？",options:["屏藩周室","監視商民","擴張版圖","籠絡人心"],answer:3,explain:"此舉旨在籠絡人心：讓各舊部族自行管治，換取他們承認周室的共主地位，以穩定仍忠於商朝的部族。"},
+  {topic:"第一次封建",q:"下列封國與受封者的配對，何者正確？",options:["齊—周公旦","魯—姜尚","燕—召公奭","畢—太公望"],answer:2,explain:"第一次封建中，召公奭封於燕、周公旦封於魯、庶叔高封於畢、姜尚（太公望）封於齊；故只有「燕—召公奭」正確。"},
+  {topic:"第一次封建",q:"關於西周第一次封建的目的，下列哪些說法正確？\n(1) 安撫商遺民（封武庚於殷）\n(2) 監視商遺民（封三監）\n(3) 酬謝功臣（封姜尚於齊）\n(4) 籠絡人心（興滅繼絕，封前代共主之後）",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:3,explain:"四項均屬第一次封建的目的：安撫、監視、屏藩、酬謝功臣、籠絡人心；故全部正確。"},
+  {topic:"第一次封建",q:"關於武王所封的「三監」，下列哪些說法正確？\n(1) 由宗室霍叔、管叔、蔡叔擔任\n(2) 封於殷附近\n(3) 職責是監視武庚及商民、防止叛變\n(4) 由異姓功臣擔任",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:0,explain:"(1)(2)(3)正確；(4)錯誤——三監由宗室（武王之弟）擔任，並非異姓功臣。"},
+  {topic:"第一次封建",q:"關於第一次封建存在的缺陷，下列哪些說法正確？\n(1) 姬姓封國集中於殷地以西\n(2) 東方多由商王及前代共主後人自治\n(3) 周人仍難有效控制東方殷商殘餘勢力與邊族\n(4) 周室完全沒有分封任何宗室",options:["只有(1)、(2)及(4)","只有(1)、(2)及(3)","只有(3)及(4)","(1)、(2)、(3)及(4)"],answer:1,explain:"(1)(2)(3)正確；(4)錯誤——第一次封建已大封姬姓宗室，惟多集中於殷地以西，東方控制力不足，埋下三監之亂伏線。"},
+  {topic:"三監之亂",q:"武王死後，因成王年幼而攝政的是？",options:["召公奭","姜尚","周公旦","康叔"],answer:2,explain:"武王克殷後不久去世，嗣子成王年幼，由武王弟周公旦攝政。"},
+  {topic:"三監之亂",q:"「三監之亂」爆發的導火線是？",options:["周公推行井田制","管叔、蔡叔不滿周公攝政，散播謠言並聯合武庚叛亂","外族入侵鎬京","諸侯不滿禮樂制度"],answer:1,explain:"管、蔡不滿周公攝政，散播「周公將不利於孺子」謠言，並聯合武庚及奄、蒲姑等東夷諸族起兵，史稱「三監之亂」。"},
+  {topic:"三監之亂",q:"周公平定三監之亂後，對叛亂者的處置，下列何者正確？",options:["殺武庚、管叔，流放蔡叔，貶霍叔為平民","三監均被處死","全部赦免","三監均被流放"],answer:0,explain:"周公親率大軍東征三年平亂，結果殺武庚、管叔，流放蔡叔，貶霍叔為平民。"},
+  {topic:"三監之亂",q:"有史家認為「第一次封建的失敗是三監之亂的原因」。下列哪些可支持這觀點？\n(1) 商遺民仍有叛周之念\n(2) 東方部落未完全受周室控制\n(3) 宗室（三監）未恪守監視與屏藩之責\n(4) 第一次封建完全沒有分封宗室",options:["只有(1)、(2)及(4)","只有(1)及(4)","只有(1)、(2)及(3)","(1)、(2)、(3)及(4)"],answer:2,explain:"(1)(2)(3)正確；(4)錯誤——第一次封建已分封宗室，問題在於成效不足，未能完全鞏固統治。"},
+  {topic:"第二次封建",q:"西周第二次封建主要由誰推行？",options:["周武王","召公奭","姜尚","周公旦"],answer:3,explain:"第二次封建於周公旦平定三監之亂後推行（約前1042／1039年）。"},
+  {topic:"第二次封建",q:"周公營建東都洛邑，主要作用是？",options:["取代鎬京成為唯一首都","作為控馭東部的政治、軍事中心，並捍衞鎬京","安置功臣","作為祭祀場所"],answer:1,explain:"洛邑駐有八師，作控馭東部、鎮懾東方諸族的中心，亦為捍衞鎬京的東大門；鎬京稱「宗周」、洛邑稱「成周」。"},
+  {topic:"第二次封建",q:"第二次封建中，被封於宋以安撫商遺民的是？",options:["紂王之兄微子啟","紂王之子武庚","武王之弟康叔","周公之子伯禽"],answer:0,explain:"武庚已於三監之亂被殺；第二次封建改封紂王之兄微子啟於宋（商丘），以示不絕商祀、安撫商民。"},
+  {topic:"第二次封建",q:"武王之弟康叔被改封於殷地，並改稱？",options:["魯","齊","衛","晉"],answer:2,explain:"周公將殷地改封給康叔，改稱「衛」，以強力管治商遺民。"},
+  {topic:"第二次封建",q:"關於第二次封建「控馭東部、擴張勢力」的安排，下列哪些說法正確？\n(1) 封周公之子伯禽於魯（遷至奄國舊地）\n(2) 封姜尚之子伋於齊（遷至蒲姑舊地）\n(3) 封成王弟唐叔於晉（佔領戎狄聚居之地）\n(4) 周室勢力南抵長江流域的吳、楚一帶",options:["只有(1)及(2)","只有(1)、(3)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:3,explain:"四項均正確：東有魯、齊（遷奄、蒲姑並鎮撫徐戎、淮夷），北有晉、燕，南方勢力伸展至長江流域吳、楚等國。"},
+  {topic:"第二次封建",q:"關於第二次封建處理商遺民的手法，下列哪些說法正確？\n(1) 改封微子啟於宋，以示不絕商祀\n(2) 將參與叛亂的殷頑民遷往洛邑嚴密監視\n(3) 把殷地改封康叔（衛）以強力管治商遺民\n(4) 在宋附近封曹、滕、蔣、息等姬姓諸侯國加以監視",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:3,explain:"四項均正確——周室透過安撫、遷徙分化、強力管治及姬姓封國環繞監視，使商遺民失去叛亂條件。"},
+  {topic:"第二次封建",q:"下列哪些是第二次封建「新增或獨有」的目的或做法（第一次封建所無）？\n(1) 營建東都洛邑以控馭東部\n(2) 向東、北、南大力擴張勢力\n(3) 把商遺民分散遷往衛、宋、洛邑加以分化\n(4) 興滅繼絕，分封前代共主之後",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:0,explain:"(1)(2)(3)為第二次封建獨有；(4)「興滅繼絕」屬第一次封建獨有的做法。"},
+  {topic:"兩次封建比較",q:"下列哪一項是第一次封建有、而第二次封建沒有的分封目的？",options:["安撫商遺民","監視商遺民","興滅繼絕（分封前代共主之後）","屏藩周室"],answer:2,explain:"安撫、監視、屏藩兩次俱有；「酬謝功臣」與「興滅繼絕」為第一次封建獨有，「擴張勢力」「控馭東部」為第二次封建獨有。"},
+  {topic:"兩次封建比較",q:"就「擴展勢力」而言，兩次封建的勢力範圍變化是？",options:["兩次都局限於渭河流域","第一次達黃河中游，第二次擴展至黃河下游、淮河流域以至東面海濱","第一次已達海濱，第二次反而收縮","兩次範圍完全相同"],answer:1,explain:"第一次封建周人勢力伸展至黃河中游；第二次封建勢力已達東邊海濱，伸展至黃河下游和淮河流域，版圖大為擴張。"},
+  {topic:"兩次封建比較",q:"DSE曾以傅樂成《中國通史》為材料，問第一次分封採用了「哪兩項政策」。根據課文，這兩項政策應是？",options:["井田與宗法","禮樂與刑罰","懷柔政策與武裝移民（軍事佔領）","朝覲與納貢"],answer:2,explain:"傅樂成指周室克商初期對商人採「懷柔政策」（如封武庚），同時並進的是「武裝移民和軍事佔領」（分封親屬、功臣建國並以武力控制）。"},
+  {topic:"兩次封建比較",q:"下列哪些屬於兩次封建「相似」的分封目的？\n(1) 安撫商人\n(2) 監視商人\n(3) 屏藩周室\n(4) 控馭東部",options:["只有(1)、(2)及(4)","只有(1)及(2)","只有(1)、(2)及(3)","(1)、(2)、(3)及(4)"],answer:2,explain:"(1)(2)(3)為兩次封建相似的目的；(4)「控馭東部」為第二次封建獨有，故不屬相似之處。"},
+  {topic:"兩次封建比較",q:"比較兩次封建，下列哪些說法正確？\n(1) 推行者分別為周武王、周公旦\n(2) 時間分別在滅商建周後、平定三監之亂後\n(3) 兩次都有屏藩周室之舉\n(4) 兩次都有營建東都洛邑",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:0,explain:"(1)(2)(3)正確；(4)錯誤——營建東都洛邑只見於第二次封建。"},
+  {topic:"封建制度",q:"西周封建社會呈金字塔式結構，由上而下的等級排列是？",options:["天子→卿大夫→諸侯→士→平民","天子→諸侯→卿大夫→士→平民","諸侯→天子→士→卿大夫→平民","天子→諸侯→士→卿大夫→平民"],answer:1,explain:"西周階級社會由上而下為：天子、諸侯、卿大夫、士、平民（庶民），越上一級權力越大。"},
+  {topic:"封建制度",q:"周代諸侯「五等爵」由高至低是？",options:["公、侯、伯、子、男","公、伯、侯、男、子","侯、公、伯、子、男","王、公、侯、伯、子"],answer:0,explain:"周代諸侯爵位分公、侯、伯、子、男五等。"},
+  {topic:"封建制度",q:"封建制度下「天子六軍、大國三軍、次國二軍、小國一軍」，而王畿方千里、命官最多。這最能說明？",options:["諸侯實力凌駕天子","天子與諸侯權力均等","卿大夫掌握最大軍力","天子在土地、命官、軍力上均凌駕諸侯，地位定於一尊"],answer:3,explain:"無論王畿面積、命官數目還是軍隊數量，天子都遠多於諸侯，可見天子在經濟、政治、軍事實力上凌駕諸侯，地位定於一尊。"},
+  {topic:"封建制度",q:"諸侯定期朝見天子、報告封國情況，稱為？",options:["巡狩","述職（朝覲）","聘問","從征"],answer:1,explain:"諸侯定期向天子述職，稱「朝覲」（春曰朝、秋曰覲）；天子定期巡視封國則稱「巡狩」。"},
+  {topic:"封建制度",q:"周幽王「烽火戲諸侯」，各路諸侯率兵趕至鎬京。諸侯此舉所履行的義務是？",options:["朝覲","納貢","勤王（捍衞王室、率兵從征）","聘問"],answer:2,explain:"諸侯見烽火以為天子有難，急忙率兵趕至，屬「捍衞王室、率兵從征」的勤王義務。"},
+  {topic:"封建制度",q:"《孟子·告子下》：「一不朝，則貶其爵；再不朝，則削其地；三不朝，則六師移。」由此可推論哪些正確？\n(1) 諸侯對天子負有朝覲（述職）義務\n(2) 諸侯不盡義務，天子可貶其爵\n(3) 屢不履行，天子可削地以至發兵討伐\n(4) 天子對諸侯並無約束力",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:0,explain:"(1)(2)(3)正確；(4)錯誤——資料正反映天子對諸侯具強大約束力，可循貶爵、削地、出兵逐步施罰。"},
+  {topic:"封建制度",q:"關於封建制度下的權利與義務，下列哪些說法正確？\n(1) 上級對下級分封土地\n(2) 下級對上級納貢、服役、從征\n(3) 天子發動戰爭時可調遣諸侯之兵\n(4) 諸侯之間互不往來",options:["只有(1)、(2)及(4)","只有(1)、(2)及(3)","只有(3)及(4)","(1)、(2)、(3)及(4)"],answer:1,explain:"(1)(2)(3)正確；(4)錯誤——諸侯之間有定期互相聘問，並非互不往來。"},
+  {topic:"封建制度",q:"封建制度如何鞏固周室統治？下列哪些說法正確？\n(1) 確立諸侯對天子的從屬關係，天子定於一尊\n(2) 天子透過「策命禮」決定諸侯爵位、封地、置軍，釐清權責\n(3) 天子掌握遠優於諸侯的資源與軍力，對諸侯有強大約束力\n(4) 形成尊卑分明的階級社會，穩定政權",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:3,explain:"四項均正確——封建透過從屬關係、策命禮、實力凌駕及階級社會，全面鞏固周室統治。"},
+  {topic:"宗法制度",q:"宗法制度的核心繼承原則是？",options:["兄終弟及","嫡長子繼承","立賢不立長","諸子均分"],answer:1,explain:"宗法制度規定父親權位由嫡長子繼承，嫡長子一系為「大宗」，其餘諸子（餘子）為「小宗」。"},
+  {topic:"宗法制度",q:"下列關於宗法制度的定義，何者最準確？",options:["按軍功分配土地的制度","規範祭祀禮儀的制度","分配農田的經濟制度","以血緣親疏關係決定權位繼承的制度"],answer:3,explain:"宗法制度是以血緣親疏關係決定權位繼承的制度，核心為嫡長子繼承，區分大宗、小宗。"},
+  {topic:"宗法制度",q:"《春秋公羊傳》：「立嫡以長不以賢，立子以貴不以長。」這說明的繼承標準是？",options:["以才能賢德為唯一標準","由諸侯推舉","在嫡子中以年長者為先，在眾子中以身分尊貴者為先","由天子隨意指定"],answer:2,explain:"「立嫡以長不以賢」指正室諸子中以年長者繼位；「立子以貴不以長」指眾子中以母親身分尊貴者為先——確立嫡長子繼承的客觀標準，避免繼承紛爭。"},
+  {topic:"宗法制度",q:"按宗法制度，周天子的餘子（非嫡長子）一般受封為？",options:["諸侯","卿大夫","士","平民"],answer:0,explain:"天子王位由嫡長子繼承，餘子受封為諸侯；諸侯君位由嫡長子繼，餘子則降封為卿大夫，依次而下。"},
+  {topic:"宗法制度",q:"關於「大宗」與「小宗」，下列哪些說法正確？\n(1) 世代相傳的嫡長子一系稱大宗\n(2) 大宗永遠是小宗的領袖\n(3) 大宗與小宗是相對的概念\n(4) 諸侯在本封國內相對卿大夫而言是大宗",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:3,explain:"四項均正確——大宗、小宗是相對概念：諸侯相對天子是小宗，但在本封國內相對卿大夫則為大宗。"},
+  {topic:"宗法制度",q:"宗法制度如何鞏固封建統治？下列哪些說法正確？\n(1) 確立嫡長子繼承，避免繼承紛爭\n(2) 以「親親」使天子與諸侯具兄弟血緣關係，形成親緣政治\n(3) 以「尊尊」確立宗族尊卑，小宗服從大宗\n(4) 層層相屬，全國尊卑分明，確立天子獨尊",options:["只有(1)、(2)及(3)","(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)及(4)"],answer:1,explain:"四項均正確——宗法從繼承、親親、尊尊、層層相屬各方面鞏固封建秩序，使周天子地位定於一尊。"},
+  {topic:"宗法制度",q:"關於封建制度與宗法制度的關係，下列哪些說法正確？\n(1) 封建確立天子與諸侯的君臣關係（君統）\n(2) 宗法確立天子與諸侯的血緣關係（宗統）\n(3) 兩者相輔相成，共同鞏固封建秩序\n(4) 兩者互相對立",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:0,explain:"(1)(2)(3)正確；(4)錯誤——封建（君統）與宗法（宗統）相輔相成，並非對立。"},
+  {topic:"禮樂制度",q:"禮樂制度的性質與目的是？",options:["一種軍事制度，旨在擴軍","一種教化制度，旨在培養良好風俗和秩序","一種繼承制度","一種土地制度"],answer:1,explain:"禮樂制度是教化制度，目的在培養良好風俗和秩序，為封建、宗法的輔行制度。"},
+  {topic:"禮樂制度",q:"下列關於「禮」與「樂」的描述，何者正確？",options:["「禮」指舞樂，「樂」指刑罰","「禮」指土地，「樂」指軍隊","「禮」是對貴族行為的外在規範（典禮儀式），「樂」是隨禮儀而起的舞樂","兩者只適用於平民"],answer:2,explain:"「禮」（禮儀）是典禮儀式、對貴族行為的外在規範；「樂」（舞樂）是隨禮儀活動而起的舞樂。"},
+  {topic:"禮樂制度",q:"《禮記·曲禮》：「禮不下庶人，刑不上大夫。」這反映？",options:["禮樂人人適用","平民地位高於貴族","大夫須受嚴刑","禮只適用於統治者內部，平民無資格接受禮樂規範而以刑法約束"],answer:3,explain:"在封建制度下，禮是區分及確立統治者等級身分的制度，只適用於統治者內部；平民沒有接受禮樂規範的資格，而以刑法約束。"},
+  {topic:"禮樂制度",q:"由祭祀用鼎（天子九、諸侯七、卿大夫五、士三）及舞蹈（佾）人數的規定，可見禮樂制度的特徵。下列哪些正確？\n(1) 以器物與舞樂數量區分等級身分\n(2) 強調等級差別與身分相稱\n(3) 貴族不得逾越，逾越即「僭禮」\n(4) 目的在使貴族人人平等",options:["只有(1)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(3)","(1)、(2)、(3)及(4)"],answer:2,explain:"(1)(2)(3)正確；(4)錯誤——禮樂正是強調等級差別、身分相稱，而非人人平等。"},
+  {topic:"禮樂制度",q:"關於禮樂制度的內容，下列哪些說法正確？\n(1) 由周公制定「周禮」\n(2) 「禮」為典禮儀式，「樂」為隨禮而起的舞樂\n(3) 不同等級貴族有不同禮樂規定，不得逾越\n(4) 禮樂規範同樣適用於平民",options:["只有(1)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(3)","(1)、(2)、(3)及(4)"],answer:2,explain:"(1)(2)(3)正確；(4)錯誤——「禮不下庶人」，平民並不適用禮樂規範。"},
+  {topic:"禮樂制度",q:"禮樂制度如何鞏固封建統治？下列哪些說法正確？\n(1) 將各級封君的權利儀式化，強調貴賤有差、尊卑有別、長幼有序\n(2) 維護封建制度下貴族的等級秩序\n(3) 周公認為音樂可陶冶性情，使社會和諧穩定\n(4) 削弱天子權力，提升平民地位",options:["只有(1)、(2)及(4)","只有(1)、(2)及(3)","只有(1)及(2)","(1)、(2)、(3)及(4)"],answer:1,explain:"(1)(2)(3)正確；(4)錯誤——禮樂旨在鞏固貴族等級秩序與天子地位，並非削弱天子或提升平民。"},
+  {topic:"井田制度",q:"井田制度屬周代哪一方面的制度？",options:["經濟（土地分配）制度","軍事制度","繼承制度","教化制度"],answer:0,explain:"井田制度是西周經濟民生方面的土地分配制度，為封建制的經濟基礎。"},
+  {topic:"井田制度",q:"關於井田制度的內容與作用，下列哪些說法正確？\n(1) 以「井」字形把土地劃分為九份\n(2) 四周為私田，分給八家農民自耕，收穫歸農民\n(3) 中間為公田，由八家共耕，收穫呈交貴族\n(4) 它是封建制的經濟基礎",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:3,explain:"四項均正確——井田使平民自給自足、社會安定，貴族又可收取賦稅依時向上級納貢，確保封建運作，是封建制的經濟基礎。"},
+  {topic:"封建的影響",q:"兩次封建被錢穆形容為「侵略性的武裝移民與軍事佔領」，其對周室版圖的直接影響是？",options:["版圖縮小至渭河一帶","版圖大為擴張：西至甘肅、東達濱海、南抵長江中下游、北至遼寧","與商朝版圖相同","只限於洛邑周邊"],answer:1,explain:"透過兩次封建武裝拓殖，周室版圖遠超商朝，最盛時西至甘肅、東達濱海、南抵長江中下游、北至遼寧，奠定後世中國大一統疆域的雛型。"},
+  {topic:"封建的影響",q:"課文所指的「華夏」是指？",options:["周室及周室承認或分封的諸侯國家","所有居於中原的人","只指周王室","蠻夷戎狄以外的所有外族"],answer:0,explain:"「華夏」指周室及周室承認或分封的諸侯國家；「蠻夷戎狄」則指華夏諸國以外的少數民族。"},
+  {topic:"封建的影響",q:"關於封建對「華夏民族摶成」的影響，下列哪些說法正確？\n(1) 分封使宗室、功臣帶領周人移殖各地，與當地原居民糅合\n(2) 東方的齊、魯與東夷、淮夷融合\n(3) 北方的晉、燕與戎、狄交往\n(4) 各族長期雜處、通婚，凝聚華夏民族意識",options:["只有(1)及(4)","只有(2)及(3)","只有(1)、(2)及(3)","(1)、(2)、(3)及(4)"],answer:3,explain:"四項均正確——封建即武裝移民，各族長期雜處、通婚、共同生活，血統文化融合，形成以夏、商、周、東夷為主源，蠻、戎、狄為支源的華夏民族。"},
+  {topic:"封建的影響",q:"下列哪些屬於封建（連同兩次分封）的影響？\n(1) 擴大周室版圖\n(2) 確立周天子地位，國祚得享約八百年\n(3) 促成華夏民族摶成\n(4) 華夏文化廣被四方",options:["只有(1)、(2)及(3)","(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)及(4)"],answer:1,explain:"四項均為封建的影響：擴大版圖、確立天子地位、促成華夏民族摶成、華夏文化廣被四方。"},
+  {topic:"封建的衰落",q:"西周封建制度日趨衰落的根本制度缺陷是？",options:["諸侯數目太少","井田制過於公平","禮樂制度過於嚴苛","隨世代推移，天子與諸侯間血緣、姻親關係日漸淡薄，諸侯失去向心力"],answer:3,explain:"封建以血緣為紐帶；隨時間推移，血緣、姻親日漸疏遠，諸侯對中央失去向心力，加上諸侯自行開疆拓土、勢力坐大，一旦天子缺乏實力即難保權威。"},
+  {topic:"封建的衰落",q:"許倬雲《西周史》：「地方有限，而王臣一代一代都勢必佔有土地……王室直接掌握的土地，越來越少。」這說明封建衰落的原因之一是？",options:["分封日久，王室可直接掌握的土地與資源不斷減少，實力下降","土地不斷增加","諸侯主動歸還土地","王室財富日增"],answer:0,explain:"封地有限而世代受封者不斷佔有土地，日積月累下王室直接掌握的土地越來越少，實力相對下降，難以維持對諸侯的約束力。"},
+  {topic:"封建的衰落",q:"關於西周天子權威下降、封建衰落的跡象，下列哪些說法正確？\n(1) 周昭王三次南征楚國失敗，並於南征期間溺死\n(2) 楚君熊渠僭越禮制，分封三位兒子為王\n(3) 諸侯就國後自行開疆拓土、勢力坐大\n(4) 周公東征平定三監之亂",options:["只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:0,explain:"(1)(2)(3)反映天子權威下降、諸侯坐大；(4)周公東征是西周初年強盛、鞏固統治之舉，並非衰落跡象。"},
+  {topic:"霸政與爭雄背景",q:"「春秋」一名的由來是？",options:["源於西漢劉向整理的《戰國策》","源於孔子編訂的魯國史書《春秋》","源於司馬遷的《史記》","源於左丘明的《左傳》"],answer:1,explain:"「春秋」之名源於同期孔子編訂的魯國史書《春秋》；「戰國」之名則源於西漢劉向整理的《戰國策》。"},
+  {topic:"霸政與爭雄背景",q:"「戰國」一名的由來是？",options:["源於西漢劉向整理的史書《戰國策》","源於孔子編訂的《春秋》","源於班固的《漢書》","源於司馬光的《資治通鑑》"],answer:0,explain:"「戰國」之名源於西漢劉向整理的史書《戰國策》。"},
+  {topic:"霸政與爭雄背景",q:"一般以哪一事件作為春秋與戰國時代的分界？",options:["三家分晉（周天子冊封韓、趙、魏三晉，約前403年）","平王東遷洛邑","秦滅六國統一天下","晉楚城濮之戰"],answer:0,explain:"三家分晉後，春秋進入戰國；周天子於前403年冊封韓、趙、魏為諸侯，一般視為春秋與戰國的分界。"},
+  {topic:"霸政與爭雄背景",q:"西周末年，直接引致亡國的事件是周幽王？",options:["主動遷都洛邑","被韓、趙、魏三家所分","廢申后及太子宜臼，改立寵妃褒姒及其子伯服","在城濮之戰戰敗身亡"],answer:2,explain:"幽王廢王后申后及太子宜臼，改寵褒姒、立其子伯服為太子，宜臼出奔申國，終引發申侯聯合犬戎攻周。"},
+  {topic:"霸政與爭雄背景",q:"關於西周滅亡的經過，下列哪些說法正確？\n(1) 太子宜臼被廢後，出奔至外公申侯的封國\n(2) 申侯聯合外族犬戎攻陷鎬京\n(3) 周幽王被殺於驪山之下\n(4) 西周亡於周平王在位之時",options:["(1)、(2)、(3)及(4)","只有(1)、(2)及(3)","只有(1)及(2)","只有(2)、(3)及(4)"],answer:1,explain:"(1)(2)(3)正確；(4)錯誤——西周亡於幽王被殺，宜臼即位（周平王）並東遷洛邑後已屬東周。"},
+  {topic:"霸政與爭雄背景",q:"周幽王死後，平王將首都由鎬京東遷至何地，史稱東周（春秋）開始？",options:["洛邑","殷（商丘）","臨淄","咸陽"],answer:0,explain:"平王在晉、鄭、秦等諸侯護送下，將首都由殘破且受犬戎威脅的鎬京，東遷至洛邑，東周（春秋）由此開始。"},
+  {topic:"霸政與爭雄背景",q:"關於平王即位後東遷洛邑的原因，下列哪些說法正確？\n(1) 鎬京經戰亂後十分殘破\n(2) 犬戎仍威脅鎬京一帶\n(3) 平王遂將首都東遷至洛邑\n(4) 諸侯群起反對平王繼位",options:["(1)、(2)、(3)及(4)","只有(1)、(2)及(3)","只有(1)及(4)","只有(2)、(3)及(4)"],answer:1,explain:"(1)(2)(3)正確；(4)錯誤——平王正是由申侯及晉、鄭等諸侯共同擁立，並非群起反對。"},
+  {topic:"霸政與爭雄背景",q:"關於平王東遷後「周室衰微」的原因，下列哪些說法正確？\n(1) 為酬謝護送諸侯，把王畿之地分賜他們，王畿日削\n(2) 遷都後失去渭河流域大片領地，王畿由方千里削減至約一二百里\n(3) 平王有弒父之嫌，大義有虧，不受諸侯尊重\n(4) 遷都後周室財力、軍力反而強於諸侯",options:["(1)、(2)、(3)及(4)","只有(1)、(2)及(4)","只有(1)、(2)及(3)","只有(2)、(3)及(4)"],answer:2,explain:"(1)(2)(3)正確；(4)錯誤——王畿縮小令人口、兵源、稅收俱減，周室財力、軍力都不如諸侯。"},
+  {topic:"霸政與爭雄背景",q:"平王有「弒父之嫌」，對宗法制度造成的最直接影響是？",options:["鞏固嫡長子繼承制度","加強周天子的權威","令禮樂制度更受尊重","破壞「親親尊尊」精神及嫡長子繼承制，諸侯仿效平王篡弒奪位"],answer:3,explain:"幽王被殺、平王有弒父之嫌，破壞宗法「親親尊尊」精神，又破壞嫡長子繼承制，諸侯遂仿效篡弒奪位，宗法崩壞。"},
+  {topic:"春秋四大問題",q:"下列何者「不」屬於春秋時期的四大問題？",options:["周室衰微，王命不行","夷狄乘機入侵","篡弒頻生、列國兼併","諸子百家爭鳴"],answer:3,explain:"春秋四大問題為：周室衰微王命不行、夷狄乘機入侵、篡弒頻生、列國兼併；「諸子百家爭鳴」屬學術思想現象。"},
+  {topic:"春秋四大問題",q:"錢穆《國史大綱》指周室東遷後引起連串現象。下列哪些屬春秋時期的問題？\n(1) 共主衰微，王命不行\n(2) 列國（諸侯）兼併\n(3) 列國內亂（篡弒）\n(4) 戎狄（夷狄）橫行",options:["只有(1)、(2)及(3)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)","只有(1)、(3)及(4)"],answer:2,explain:"錢穆指東遷後共主衰微、王命不行，繼而引起列國內亂、諸侯兼併、戎狄橫行，正對應春秋四大問題，四項皆是。"},
+  {topic:"春秋四大問題",q:"下列哪些屬封建制度「先天缺陷」，導致其趨於崩壞？\n(1) 封國擁有行政、財政、軍事自主權，地位世襲，形同獨立王國\n(2) 周天子不斷分封，後期甚至分削王畿，周室土地越來越少\n(3) 隨時間推移血緣、姻親日漸疏離，諸侯對中央失去向心力\n(4) 封建與宗法、禮樂相輔相成，封建崩壞則他制亦難獨善其身",options:["只有(1)、(2)及(3)","(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(4)"],answer:1,explain:"四項均為封建制度的先天缺陷：自主世襲、王畿日削、血緣疏離、制度連帶崩潰，故全部正確。"},
+  {topic:"春秋四大問題",q:"下列哪些屬春秋時期夷狄入侵中原的例子？\n(1) 北戎侵鄭\n(2) 狄人侵邢\n(3) 南方荊蠻侵犯漢水流域的姬姓封國\n(4) 犬戎攻陷鎬京、殺周幽王",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(3)","只有(1)及(4)"],answer:2,explain:"(1)(2)(3)為春秋夷狄入侵之例；(4)犬戎攻陷鎬京發生於西周末年，屬西周滅亡而非春秋時期。"},
+  {topic:"春秋四大問題",q:"下列何者屬「臣弒君」的篡弒例子？",options:["楚穆王弒楚成王","鄭莊公之弟叔段謀奪君位","宋國華督弒殤公","魯桓公弒其兄隱公而立"],answer:2,explain:"華督弒殤公、田恒弒景公屬「臣弒君」；楚穆王弒成王屬子弒父；叔段、晉武公攻兄屬弟弒兄。"},
+  {topic:"春秋四大問題",q:"經過兼併，諸侯國數目由春秋初年約一百七十多國，至春秋中葉約剩下？",options:["幾十個國家","仍有八百多個","增至三百多個","只剩七個"],answer:0,explain:"兼併使諸侯國由春秋初約170多國，減至春秋中葉幾十個，再到戰國初年只餘約二十國。"},
+  {topic:"春秋霸政內容",q:"春秋時期霸政局面形成的主因是？",options:["周天子主動禪讓於諸侯","外族入主中原建立新王朝","平民起義推翻貴族","周天子無力解決四大問題，各國期望新共主，實力強大者乘時崛起代天子領導華夏"],answer:3,explain:"面對四大問題周天子無力解決，各國期望新共主穩定政局，強國乘時崛起成為「霸主」，形成霸政局面。"},
+  {topic:"春秋霸政內容",q:"下列何者是春秋五霸中「首先」稱霸者，並首推「尊王攘夷」？",options:["晉文公","齊桓公","楚莊王","秦穆公"],answer:1,explain:"按時間順序，齊桓公率先稱霸，任管仲為相富國強兵，並首推「尊王攘夷」。"},
+  {topic:"春秋霸政內容",q:"依「齊桓晉文霸業隆……」一類口訣，下列哪些屬一般所指的春秋五霸？\n(1) 齊桓公\n(2) 宋襄公\n(3) 晉文公\n(4) 越王勾踐",options:["只有(1)、(2)及(3)","(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(3)及(4)"],answer:0,explain:"一般所指春秋五霸為齊桓公、宋襄公、晉文公、秦穆公、楚莊王；越王勾踐屬春秋晚期吳越爭霸，不在此列。"},
+  {topic:"春秋霸政內容",q:"朱熹《論語·憲問集注》認為，春秋霸主中真正做到「尊王攘夷」的是？",options:["楚莊王與秦穆公","吳王夫差與越王勾踐","宋襄公與楚莊王","齊桓公與晉文公"],answer:3,explain:"朱熹認為吳越只徒具「尊王攘夷」之名、楚莊出身蠻夷且問鼎，故實際真正做到尊王攘夷者只有齊桓、晉文二公。"},
+  {topic:"春秋霸政內容",q:"齊桓公（小白）即位後，經鮑叔牙推薦，任用誰為相，大力發展經濟、富國強兵？",options:["鮑叔牙","子產","孫叔敖","管仲"],answer:3,explain:"齊桓公任管仲為相，發展經濟，令齊國國富兵強，成為春秋第一位霸主。"},
+  {topic:"春秋霸政內容",q:"下列哪些屬齊桓公「尊王」的例子？\n(1) 阻止周惠王廢太子鄭，率諸侯擁太子繼位\n(2) 召開「召陵之盟」，責楚不向周天子進貢\n(3) 代天子會盟諸侯於葵丘（葵丘之盟），要求諸侯尊重周室\n(4) 伐山戎以救燕",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(4)","只有(1)、(2)及(3)"],answer:3,explain:"(1)(2)(3)屬「尊王」；(4)伐山戎以救燕屬「攘夷」之舉。"},
+  {topic:"春秋霸政內容",q:"下列哪些屬齊桓公「攘夷」的例子？\n(1) 伐山戎以救燕\n(2) 逐白狄以救邢存衛\n(3) 阻止周惠王廢太子鄭\n(4) 代天子會盟諸侯於葵丘",options:["只有(1)及(2)","只有(1)、(2)及(3)","只有(2)及(3)","(1)、(2)、(3)及(4)"],answer:0,explain:"(1)(2)屬「攘夷」；(3)阻止廢太子、(4)葵丘之盟均屬「尊王」之舉。"},
+  {topic:"春秋霸政內容",q:"有「仁義之師」之稱、意圖繼承齊桓公霸業，卻在泓水之戰大敗於楚、中箭身亡而未成霸業者是？",options:["宋襄公","晉文公","秦穆公","楚莊王"],answer:0,explain:"宋襄公以「仁義之師」自居，於泓水之戰大敗於楚，中箭身亡，未能完成霸業。"},
+  {topic:"春秋霸政內容",q:"晉文公（重耳）在哪一戰役「退避三舍」大敗楚軍，並於踐土會盟諸侯而成就霸業？",options:["城濮之戰","泓水之戰","長平之戰","牧野之戰"],answer:0,explain:"晉文公在城濮之戰退避三舍、誘敵深入，大敗楚軍，並於踐土會盟諸侯，成就霸業。"},
+  {topic:"春秋霸政內容",q:"下列哪些屬晉文公「尊王攘夷」的例子？\n(1) 殺王子帶而迎周襄王返都復位\n(2) 會諸侯於踐土，並請周襄王前來主持，輔助周室\n(3) 在城濮之戰大敗楚軍，阻止楚國侵犯中原\n(4) 屢次東進皆被晉國阻擋，只好向西方稱霸",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(3)","只有(1)、(3)及(4)"],answer:2,explain:"(1)(2)屬尊王、(3)屬攘夷；(4)屢次東進被晉阻擋而西霸者是秦穆公，並非晉文公。"},
+  {topic:"春秋霸政內容",q:"秦穆公因屢次東進皆被晉國阻擋，最終的霸業形態是？",options:["北上問鼎中原，取代周天子","在西方稱霸，并吞西方落後民族，成為西戎中的霸主","與越王勾踐爭霸於長江下游","聯合楚國滅亡晉國"],answer:1,explain:"秦穆公東進受晉所阻，遂向西發展，并吞西方落後民族，滅國十二、闢地千里，成為西戎霸主。"},
+  {topic:"春秋霸政內容",q:"「問鼎中原」「一鳴驚人」的典故與哪位霸主有關？",options:["齊桓公","楚莊王","秦穆公","吳王夫差"],answer:1,explain:"楚莊王一鳴驚人、擊敗晉國成就霸業，並向周室大臣王孫滿問鼎之輕重，暗示挑戰周天子地位。"},
+  {topic:"春秋霸政內容",q:"關於春秋末年吳越爭霸，下列哪些說法正確？\n(1) 吳王闔閭任用伍子胥、孫武為將，擊敗楚國\n(2) 夫差大敗越國，越王勾踐投降被俘\n(3) 勾踐臥薪嘗膽，回國勵精圖治，終一戰滅吳、夫差自殺\n(4) 越滅吳是首個一舉滅大國的戰爭，開啟戰國序幕",options:["只有(1)、(2)及(3)","只有(2)、(3)及(4)","只有(1)、(3)及(4)","(1)、(2)、(3)及(4)"],answer:3,explain:"四項均正確：吳王闔閭破楚、夫差敗越、勾踐滅吳，越滅吳屬劃時代之戰，開啟戰國序幕。"},
+  {topic:"春秋霸政內容",q:"霸主針對春秋四大問題提出口號，下列配對哪些正確？\n(1) 周室衰微、王命不行→「尊周室」\n(2) 夷狄乘機入侵→「攘夷狄」\n(3) 篡弒頻生→「禁篡弒」\n(4) 列國兼併→「抑兼併」",options:["只有(1)、(2)及(3)","(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(4)"],answer:1,explain:"四項配對均正確，其中「尊周室」與「攘夷狄」合稱「尊王攘夷」。"},
+  {topic:"春秋霸政內容",q:"關於霸主對「禁篡弒」「抑兼併」的成效，下列哪些說法正確？\n(1) 霸主對篡弒、兼併多只有口號上的抵制，實際力度有限\n(2) 霸主自身亦參與兼併（如齊桓併國三十五、楚莊併國二十六）\n(3) 春秋末年更出現卿大夫篡奪諸侯權位（田氏代齊、三家分晉）\n(4) 霸主完全制止了篡弒與兼併",options:["只有(1)、(2)及(3)","(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(3)及(4)"],answer:0,explain:"(1)(2)(3)正確；(4)錯誤——霸主對篡弒兼併力度有限，自身亦參與兼併，篡弒兼併始終未止。"},
+  {topic:"戰國七雄與變法",q:"下列哪些屬「戰國七雄」？\n(1) 韓、趙、魏\n(2) 楚、燕\n(3) 齊、秦\n(4) 宋、魯",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(3)及(4)","只有(1)、(2)及(3)"],answer:3,explain:"戰國七雄為韓、趙、魏、楚、燕、齊、秦；宋、魯不在七雄之列。"},
+  {topic:"戰國七雄與變法",q:"戰國七雄之中，由晉國分裂而來的三國是？",options:["齊、楚、燕","韓、趙、魏","秦、宋、魯","吳、越、楚"],answer:1,explain:"晉國於春秋末被卿大夫瓜分，韓、趙、魏「三家分晉」，皆成戰國七雄之一。"},
+  {topic:"戰國七雄與變法",q:"戰國後期，趙國在哪一戰役為秦所敗、四十萬降卒被坑殺，自此六國再無力抗秦？",options:["城濮之戰","泓水之戰","長平之戰","牧野之戰"],answer:2,explain:"長平之戰（前260年）秦軍包圍趙軍，趙最終戰敗，秦軍坑殺趙國降卒四十萬，六國再無力抗秦。"},
+  {topic:"戰國七雄與變法",q:"長平之戰如何反映戰國時期戰爭的規模及殘酷？下列哪些正確？\n(1) 戰爭歷時約三年\n(2) 雙方投入兵力多達一百萬人\n(3) 秦軍坑殺趙國降卒四十萬人\n(4) 戰爭只持續數天即告結束",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(3)","只有(1)、(2)及(4)"],answer:2,explain:"(1)(2)(3)正確；(4)錯誤——長平之戰歷時數年、動員百萬、坑殺四十萬，規模殘酷遠非數天可了。"},
+  {topic:"戰國七雄與變法",q:"秦王嬴政在哪一年消滅六國、統一天下？",options:["公元前221年","公元前770年","公元前403年","公元前260年"],answer:0,explain:"前770年平王東遷、前403年冊封三晉、前260年長平之戰；嬴政於前221年滅六國統一天下。"},
+  {topic:"戰國七雄與變法",q:"觀察戰國各國任用人才的背景，下列哪些屬其共通特色？\n(1) 不少人才出身低微（如吳起、張儀為平民）\n(2) 不少人才原籍在其他國家（如商鞅本衞人、申不害本鄭人）\n(3) 反映國君用人不拘一格、不問出身、唯才是用，積極延攬客卿\n(4) 國君只任用本國宗室貴族",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(3)","只有(1)、(3)及(4)"],answer:2,explain:"(1)(2)(3)正確；(4)錯誤——國君為求富國強兵，正是用人不拘一格、廣納他國客卿，而非只用本國宗室。"},
+  {topic:"戰國七雄與變法",q:"關於秦國商鞅變法的內容，下列哪些說法正確？\n(1) 獎勵軍功，按軍功授爵，廢除世卿世祿\n(2) 廢井田、開阡陌，承認土地私有\n(3) 推行縣制，官吏由國君任免\n(4) 編定戶籍，實行什伍連坐，互相監視",options:["(1)、(2)、(3)及(4)","只有(1)、(2)及(3)","只有(2)、(3)及(4)","只有(1)、(2)及(4)"],answer:0,explain:"四項均為商鞅變法內容，措施全面而徹底，為秦國富強統一奠定基礎。"},
+  {topic:"戰國七雄與變法",q:"一般認為戰國各國變法中，以哪一國的變法最全面、持久及成功，為秦統一奠基？",options:["魏國李悝變法","楚國吳起變法","秦國商鞅變法","趙國胡服騎射"],answer:2,explain:"孝公之後各君主續行商鞅之法，使秦國變法較六國徹底、成功，秦終能蕩平六國、統一天下。"},
+  {topic:"戰國七雄與變法",q:"戰國時推行「胡服騎射」，改革軍事裝備與作戰方法以提高戰力的是？",options:["魏文侯","燕昭王","韓昭侯","趙武靈王"],answer:3,explain:"趙武靈王推行「胡服騎射」，令軍隊改穿胡服、練習騎射，提高趙國軍事實力。"},
+  {topic:"戰國七雄與變法",q:"戰國各國變法的主要方針，下列哪些正確？\n(1) 中央集權\n(2) 發展農業\n(3) 軍事改革\n(4) 恢復世卿世祿、強化貴族特權",options:["(1)、(2)、(3)及(4)","只有(1)、(2)及(3)","只有(2)、(3)及(4)","只有(1)、(2)及(4)"],answer:1,explain:"(1)(2)(3)正確；(4)錯誤——戰國變法正是要削弱貴族特權、廢除世卿世祿，而非加以強化。"},
+  {topic:"政治變動分析",q:"周天子地位的演變，下列何者依「西周→春秋→戰國」的次序正確排列？",options:["名實俱亡 → 禮樂征伐自諸侯出 → 定於一尊","禮樂征伐自天子出 → 名實俱亡 → 定於一尊","定於一尊 → 禮樂征伐自諸侯出 → 名實俱亡","定於一尊 → 名實俱亡 → 禮樂征伐自諸侯出"],answer:2,explain:"西周天子「禮樂征伐自天子出」定於一尊；春秋「禮樂征伐自諸侯出」；戰國周室名實俱亡。"},
+  {topic:"政治變動分析",q:"戰國時期周天子「名實俱亡」的表現，下列哪些正確？\n(1) 各國君主相繼稱王（如魏齊「會徐州相王」、秦惠王稱王）\n(2) 周天子地位與一諸侯國無異\n(3) 秦軍發兵攻周，周赧王被迫獻出洛邑，周室滅亡\n(4) 諸侯仍每年向周天子納貢朝覲",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(3)","只有(1)、(2)及(4)"],answer:2,explain:"(1)(2)(3)正確；(4)錯誤——戰國各國視周室如無物、相繼稱王，並非仍恭謹納貢朝覲。"},
+  {topic:"政治變動分析",q:"比較春秋與戰國的戰爭，下列哪些屬「戰國時期」的特徵？\n(1) 投入兵力數以十萬計\n(2) 盛行以步兵輔助騎兵作戰，普遍使用鐵兵器\n(3) 戰期較長，可持續數年\n(4) 以車戰為主，多用銅兵器，戰期多不過數天",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(3)及(4)","只有(1)、(2)及(3)"],answer:3,explain:"(1)(2)(3)為戰國特徵；(4)車戰為主、銅兵器、戰期短屬春秋時期戰爭特徵。"},
+  {topic:"政治變動分析",q:"關於郡縣制的演變與特點，下列哪些說法正確？\n(1) 春秋中期起列國陸續在地方設縣，另派官員治理\n(2) 春秋後期國君派將領守衞邊地，設立「郡」\n(3) 戰國時郡、縣長官（郡守、縣令）由國君任免，不得世襲，直接聽命中央\n(4) 郡縣制全面普及，取代分封制度，奠定中央集權基礎",options:["(1)、(2)、(3)及(4)","只有(1)、(2)及(3)","只有(2)、(3)及(4)","只有(1)、(3)及(4)"],answer:0,explain:"四項均正確：縣→郡先後出現，戰國時郡縣兩級長官由國君任免、不得世襲，全面取代分封，奠中央集權之基。"},
+  {topic:"政治變動分析",q:"由西周「世卿世祿制」演變為戰國「俸祿制及官僚制」，下列哪些說法正確？\n(1) 不再對官員賜與土地，改以糧食（實物俸祿）替代\n(2) 廣泛從平民中選拔人才任官，貴族官位世襲特權消失\n(3) 文官、武官系統分途，各以「相」「將」為首長以分散權力\n(4) 官位繼續由宗室貴族世襲",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(4)","只有(1)、(2)及(3)"],answer:3,explain:"(1)(2)(3)正確；(4)錯誤——俸祿制及官僚制正是要廢除官位世襲，貴族世襲特權消失。"},
+  {topic:"政治變動分析",q:"春秋戰國封建秩序崩壞、政治控制鬆弛，對社會階級流動的最直接影響是？",options:["平民更難上流","平民更易上流，有利平民崛起","貴族特權更加鞏固","對階級流動完全沒有影響"],answer:1,explain:"封建秩序崩壞、政治控制鬆弛，平民更易上流，加上戰爭篡弒令貴族沒落、軍功與私學興起，平民得以崛起。"},
+  {topic:"政治變動分析",q:"春秋戰國兼併頻仍、諸侯國數目日少，如何促使戰國變法盛行？下列推論哪些正確？\n(1) 國數銳減，各國為自保圖存以至爭雄，皆推行富國強兵之術\n(2) 兼併加速大一統局面的形成\n(3) 國君為求變法而廣納人才，用人不問出身\n(4) 兼併令各國放棄一切改革",options:["(1)、(2)、(3)及(4)","只有(1)、(2)及(3)","只有(2)、(3)及(4)","只有(1)、(2)及(4)"],answer:1,explain:"(1)(2)(3)正確；(4)錯誤——兼併威脅下各國更積極變法圖強，而非放棄改革。"},
+  {topic:"社會變動分析",q:"戰國時期「貴族沒落、平民崛起」的表現，下列哪些正確？\n(1) 列國推行變法、廢除世卿世祿，大量重用平民為官，出現「布衣卿相」\n(2) 平民可憑建立軍功而獲得爵位（如白起、樂毅）\n(3) 平民可自由從事工商業，不少成為巨富（如呂不韋）\n(4) 平民被禁止擔任任何官職",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(4)","只有(1)、(2)及(3)"],answer:3,explain:"(1)(2)(3)正確；(4)錯誤——平民可循為官、軍功、工商三途上流，「布衣卿相」正是平民崛起的寫照。"},
+  {topic:"社會變動分析",q:"「士」的地位由西周至戰國有何轉變？",options:["由社會中堅淪為奴隸","始終只是普通平民","由最底層的貴族，變為社會階層上下流動的交匯處、社會的中堅","由天子降格為諸侯"],answer:2,explain:"西周時士是最底層的貴族；春秋戰國時上層貴族下降、平民上升，士成為上下流動的交匯處與社會中堅，並形成養士風氣。"},
+  {topic:"社會變動分析",q:"春秋戰國「民間多元學術思想（百家爭鳴）」形成的原因，下列哪些正確？\n(1) 兼併日烈、貴族淪為平民，王官之學失守，家傳典籍流入民間\n(2) 沒落貴族為維持生計興辦私人講學（如孔子開平民教育之先河）\n(3) 西周舊制崩潰，學者提出針對時勢的學說，周遊列國遊說君主\n(4) 學術被官府嚴格壟斷，禁止民間私人講學",options:["只有(1)、(2)及(3)","(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(3)及(4)"],answer:0,explain:"(1)(2)(3)正確；(4)錯誤——正因王官之學失守、私學興盛，學術才流入民間而百家爭鳴。"},
+  {topic:"社會變動分析",q:"關於春秋戰國工商業的發展，下列哪些說法正確？\n(1) 西周時「工商食官」，商人只為貴族官府服務\n(2) 貴族沒落後商人不再受官府約束，商業在民間發展\n(3) 戰國時貨幣使用日益普及，大都市（如齊之臨淄、趙之邯鄲）興起\n(4) 商人甚至涉足政壇，如戰國富商呂不韋位居秦相",options:["只有(1)、(2)及(3)","只有(2)、(3)及(4)","(1)、(2)、(3)及(4)","只有(1)、(2)及(4)"],answer:2,explain:"四項均正確：由工商食官到民間工商業發達、貨幣普及、大都市興起，商人地位提高甚至涉足政壇。"},
+  {topic:"社會變動分析",q:"戰國時期明確承認土地私有、准許自由買賣的變法措施是？",options:["魯國「初稅畝」","齊國「相地而衰征」","魏國「平糴法」","秦國商鞅「廢井田、開阡陌」"],answer:3,explain:"魯「初稅畝」按佔田徵稅，僅間接承認土地私有；戰國商鞅「廢井田、開阡陌」則明確承認土地私有、准許自由買賣。"},
+  {topic:"社會變動分析",q:"春秋戰國「禮制被刑法取代」的表現，下列哪些說法正確？\n(1) 春秋禮崩樂壞，鄭國子產鑄刑書向人民公佈\n(2) 戰國法家盛行，魏國李悝編《法經》\n(3) 秦國商鞅在《法經》基礎上制定《秦律》，成為列國典範\n(4) 各國一律恢復「禮不下庶人，刑不上大夫」的舊制",options:["(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(2)及(4)","只有(1)、(2)及(3)"],answer:3,explain:"(1)(2)(3)正確；(4)錯誤——禮崩樂壞下國君改以刑法治國，並非恢復舊禮制。"},
+  {topic:"社會變動分析",q:"鄭莊公祭祀時僭用天子「九鼎」之禮。這最能反映春秋時期的甚麼現象？",options:["禮樂制度更受尊重","禮崩樂壞、貴族僭越犯上","周天子權威上升","平民地位提高"],answer:1,explain:"按周禮只有天子才能用九鼎，鄭莊公僭用九鼎屬僭禮，反映封建秩序動搖、禮崩樂壞、貴族僭越犯上。"},
+  {topic:"社會變動分析",q:"戰國時期確立戶籍制度（如秦「編戶齊民」）的主因是？",options:["戰國戰爭以步兵為主，全國農民成為征兵對象，須掌握準確人口以征兵收賦","為鼓勵工商業發展","為推廣禮樂教化","為分封諸侯建國"],answer:0,explain:"戰國戰爭規模大、以步兵為主，全國農民成征兵對象，政府須加強戶口清查、確立戶籍以便征兵收賦。"},
+  {topic:"社會變動分析",q:"關於春秋戰國的華夷民族融和，下列哪些說法正確？\n(1) 春秋夷狄為強大諸侯所滅（如西戎為秦所滅、萊夷為齊所滅）\n(2) 原習染夷狄風氣的秦、楚、吳、越在爭霸中不斷吸收中原文化\n(3) 戰國時秦、楚被承認為華夏一份子，與齊燕趙魏韓並稱七雄\n(4) 春秋戰國是中華民族第一次大融合的重要時期",options:["只有(1)、(2)及(3)","(1)、(2)、(3)及(4)","只有(2)、(3)及(4)","只有(1)、(3)及(4)"],answer:1,explain:"四項均正確：夷狄被征服同化、邊緣諸國吸收中原文化、秦楚獲認華夏，春秋戰國正是中華民族首次大融合期。"}
+];
+
+/* ===================== 系統邏輯 ===================== */
+const state={student:null,course:null,topics:[],count:30,pool:[],answers:[],cur:0};
+const MARKS=['A','B','C','D','E'];
+
+function go(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  window.scrollTo(0,0);
+}
+function confirmStudent(){
+  const n=inName.value.trim(),c=inClass.value.trim(),no=inNo.value.trim();
+  if(!n||!c||!no){alert('請完整填寫姓名、班別及學號');return;}
+  state.student={name:n,cls:c,no:no};buildCourse();go('course');
+}
+/* 課題 → 範圍（考問重點）對應；新增課題只需在此加一項，題目按 topic 自動歸入 */
+const COURSES = [
+  {name:"西周的封建", topics:["立國背景","第一次封建","三監之亂","第二次封建","兩次封建比較","封建制度","宗法制度","禮樂制度","井田制度","封建的影響","封建的衰落"]},
+  {name:"春秋戰國的政治社會變動", topics:["霸政與爭雄背景","春秋四大問題","春秋霸政內容","戰國七雄與變法","政治變動分析","社會變動分析"]}
+];
+
+function buildCourse(){
+  const box=document.getElementById('courseChips');box.innerHTML='';
+  COURSES.forEach(co=>{
+    const tps=co.topics.filter(t=>QUESTIONS.some(q=>q.topic===t));
+    const cnt=QUESTIONS.filter(q=>tps.includes(q.topic)).length;
+    const el=document.createElement('div');el.className='course-card';
+    el.innerHTML='<div class="course-name">'+co.name+'</div><div class="course-meta">'+tps.length+' 個範圍 · 共 '+cnt+' 題</div>';
+    el.onclick=()=>selectCourse(co.name);
+    box.appendChild(el);
+  });
+}
+function selectCourse(name){
+  state.course=name;buildSetup();go('setup');
+}
+function buildSetup(){
+  const co=COURSES.find(c=>c.name===state.course)||COURSES[0];
+  const topics=co.topics.filter(t=>QUESTIONS.some(q=>q.topic===t));
+  state.topics=[...topics];
+  document.getElementById('courseLabel').textContent='課題：'+co.name;
+  const box=document.getElementById('topicChips');box.innerHTML='';
+  topics.forEach(t=>{
+    const el=document.createElement('div');el.className='chip on';el.textContent=t;
+    el.onclick=()=>{el.classList.toggle('on');syncTopics();};box.appendChild(el);
+  });
+  document.querySelectorAll('#countChips .chip').forEach(c=>{
+    c.onclick=()=>{document.querySelectorAll('#countChips .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');state.count=c.dataset.c;};
+  });
+  syncTopics();
+}
+function syncTopics(){
+  state.topics=[...document.querySelectorAll('#topicChips .chip.on')].map(c=>c.textContent);
+  const n=QUESTIONS.filter(q=>state.topics.includes(q.topic)).length;
+  document.getElementById('poolInfo').textContent='可選題庫共 '+n+' 題';
+}
+function toggleAllTopics(){
+  const chips=[...document.querySelectorAll('#topicChips .chip')];
+  const allOn=chips.every(c=>c.classList.contains('on'));
+  chips.forEach(c=>c.classList.toggle('on',!allOn));syncTopics();
+}
+function startQuiz(){
+  let pool=QUESTIONS.filter(q=>state.topics.includes(q.topic));
+  if(pool.length===0){alert('請至少選擇一個範圍');return;}
+  pool=shuffle([...pool]);
+  if(state.count!=='all')pool=pool.slice(0,Math.min(parseInt(state.count),pool.length));
+  state.pool=pool;state.answers=new Array(pool.length).fill(null);state.cur=0;
+  go('quiz');renderQ();
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function renderQ(){
+  const q=state.pool[state.cur],ans=state.answers[state.cur];
+  document.getElementById('qPos').textContent='第 '+(state.cur+1)+' / '+state.pool.length+' 題';
+  document.getElementById('qScore').textContent=score();
+  document.getElementById('qBar').style.width=((state.cur)/state.pool.length*100)+'%';
+  document.getElementById('qTopic').textContent=q.topic;
+  document.getElementById('qText').textContent=q.q;
+  const ob=document.getElementById('qOptions');ob.innerHTML='';
+  q.options.forEach((opt,i)=>{
+    const el=document.createElement('div');el.className='option';
+    const mk=document.createElement('span');mk.className='mk';mk.textContent=MARKS[i];
+    const tx=document.createElement('span');tx.textContent=opt;
+    el.appendChild(mk);el.appendChild(tx);
+    if(ans!==null){el.classList.add('locked');if(i===q.answer)el.classList.add('correct');else if(i===ans)el.classList.add('wrong');}
+    else{el.onclick=()=>answer(i);}
+    ob.appendChild(el);
+  });
+  const ex=document.getElementById('qExplain');
+  if(ans!==null){ex.innerHTML='<b>解析：</b>'+esc(q.explain);ex.classList.add('show');}
+  else{ex.classList.remove('show');ex.innerHTML='';}
+  document.getElementById('btnPrev').disabled=(state.cur===0);
+  document.getElementById('btnNext').textContent=(state.cur===state.pool.length-1)?'交卷':'下一題';
+}
+function answer(i){state.answers[state.cur]=i;document.getElementById('qScore').textContent=score();renderQ();}
+function score(){return state.pool.reduce((s,q,i)=>s+(state.answers[i]===q.answer?1:0),0);}
+function prevQ(){if(state.cur>0){state.cur--;renderQ();}}
+function nextQ(){if(state.cur<state.pool.length-1){state.cur++;renderQ();}else finish();}
+async function finish(){
+  const sc=score(),total=state.pool.length,pct=Math.round(sc/total*100);
+  document.getElementById('resScore').textContent=sc+'/'+total;
+  document.getElementById('resPct').textContent=pct+'%';
+  const ring=document.getElementById('scoreRing');
+  let col='var(--wrong)',v='繼續努力！',sub='重溫一下相關章節，再挑戰一次。';
+  if(pct>=85){col='var(--correct)';v='表現優異！';sub='史學根基紮實，值得嘉許。';}
+  else if(pct>=60){col='var(--gold)';v='合格達標';sub='大致掌握，仍有提升空間。';}
+  ring.style.background=col;
+  document.getElementById('resVerdict').textContent=v;
+  document.getElementById('resSub').textContent=sub;
+  await saveScore({name:state.student.name,cls:state.student.cls,no:state.student.no,score:sc,total:total,pct:pct,topic:(state.course||"未指定"),date:new Date().toISOString()});
+  go('result');
+}
+function reviewWrong(){
+  const wrong=state.pool.map((q,i)=>({q,i})).filter(o=>state.answers[o.i]!==o.q.answer);
+  if(wrong.length===0){alert('全部答對，沒有錯題！');return;}
+  state.cur=state.pool.indexOf(wrong[0].q);go('quiz');renderQ();
+}
+const LB_KEY='cn_history_leaderboard_xizhou';
+
+/* ============================================================
+   全班跨裝置共享排行榜（後台）
+   部署 Google Apps Script 後，把網址（以 /exec 結尾）貼在下面
+   兩個引號之間即可。留空則只用本機儲存。
+   ============================================================ */
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzMZQGIINcsd0y41J_X6urgh9V84g4Xd6mrfb-DIYMbUsPGD6EA9NKu8tTf8BtpKR9A/exec";
+
+function localGet_(){
+  return (async function(){
+    try{
+      if(window.storage){const r=await window.storage.get(LB_KEY,true);return r?JSON.parse(r.value):[];}
+      if(window.localStorage){const v=localStorage.getItem(LB_KEY);return v?JSON.parse(v):[];}
+    }catch(e){}
+    return [];
+  })();
+}
+// 讀取排行榜：先試 fetch 讀 JSON，失敗再用 JSONP，雙保險避開 CORS
+function fetchJson_(){
+  return (async function(){
+    try{
+      var r=await fetch(BACKEND_URL+'?t='+Date.now(),{method:'GET'});
+      if(r&&r.ok){var j=await r.json(); if(j&&Array.isArray(j.list))return j.list;}
+    }catch(e){}
+    return null;
+  })();
+}
+function jsonp_(){
+  return new Promise(function(resolve){
+    var cb='lbcb_'+Math.floor(Math.random()*1e9),done=false;
+    var s=document.createElement('script');
+    function fin(v){if(done)return;done=true;try{delete window[cb];}catch(e){window[cb]=undefined;}if(s.parentNode)s.parentNode.removeChild(s);resolve(v);}
+    window[cb]=function(d){fin(d&&Array.isArray(d.list)?d.list:[]);};
+    s.onerror=function(){fin(null);};
+    s.src=BACKEND_URL+'?callback='+cb+'&t='+Date.now();
+    document.body.appendChild(s);
+    setTimeout(function(){fin(null);},10000);
+  });
+}
+async function getLeaderboard(){
+  if(BACKEND_URL){
+    var a=await fetchJson_(); if(a)return a;
+    var b=await jsonp_();     if(b)return b;
+    return [];
+  }
+  return localGet_();
+}
+// 儲存成績：用 GET 傳參數，避開 POST 轉址問題
+async function saveScore(entry){
+  if(BACKEND_URL){
+    try{
+      var qs='?action=save'
+        +'&name='+encodeURIComponent(entry.name)
+        +'&cls='+encodeURIComponent(entry.cls)
+        +'&no='+encodeURIComponent(entry.no)
+        +'&score='+encodeURIComponent(entry.score)
+        +'&total='+encodeURIComponent(entry.total)
+        +'&pct='+encodeURIComponent(entry.pct)
+        +'&topic='+encodeURIComponent(entry.topic||'西周的封建')
+        +'&t='+Date.now();
+      await fetch(BACKEND_URL+qs,{method:'GET',mode:'no-cors'});
+    }catch(e){}
+    return;
+  }
+  try{
+    let list=await localGet_();
+    list.push(entry);
+    list.sort((a,b)=>b.pct-a.pct||b.score-a.score||new Date(a.date)-new Date(b.date));
+    list=list.slice(0,50);
+    if(window.storage){await window.storage.set(LB_KEY,JSON.stringify(list),true);}
+    else if(window.localStorage){localStorage.setItem(LB_KEY,JSON.stringify(list));}
+  }catch(e){}
+}
+async function openLeaderboard(){
+  const list=await getLeaderboard();
+  const t=document.getElementById('lbTable');
+  let html='<div class="lb-row head"><span>排名</span><span>學生</span><span class="sc">得分</span><span class="dt">日期</span></div>';
+  if(list.length===0){html+='<div class="lb-empty">暫無紀錄，快來成為第一名！</div>';}
+  else{
+    list.slice(0,10).forEach((e,i)=>{
+      const d=new Date(e.date),md=(d.getMonth()+1)+'/'+d.getDate();
+      const cls=i===0?'top1':i===1?'top2':i===2?'top3':'';
+      html+='<div class="lb-row '+cls+'"><span class="rank">'+(i+1)+'</span><span>'+esc(e.name)+'（'+esc(e.cls)+'）</span><span class="sc">'+e.score+'/'+e.total+'</span><span class="dt">'+md+'</span></div>';
+    });
+  }
+  t.innerHTML=html;document.getElementById('lbModal').classList.add('show');
+}
+function closeLeaderboard(){document.getElementById('lbModal').classList.remove('show');}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+document.getElementById('lbModal').addEventListener('click',e=>{if(e.target.id==='lbModal')closeLeaderboard();});
+</script>
+</body>
+</html>
