@@ -159,6 +159,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   </section>
 
   <section id="screen-quiz" class="screen">
+    <div class="topbar"><button class="back" onclick="exitQuiz()">‹ 退出</button><h2 style="font-size:17px">作答中</h2><span style="width:40px"></span></div>
     <div class="progress-wrap">
       <div class="progress-meta"><span id="qPos">第 1 / 1 題</span><span class="score">得分 <b id="qScore">0</b></span></div>
       <div class="progress-bar"><i id="qBar" style="width:0%"></i></div>
@@ -1125,7 +1126,7 @@ function go(name){
 function confirmStudent(){
   const n=inName.value.trim(),c=inClass.value.trim(),no=inNo.value.trim();
   if(!n||!c||!no){alert('請完整填寫姓名、班別及學號');return;}
-  state.student={name:n,cls:c,no:no};buildCourse();go('course');
+  state.student={name:n,cls:c,no:no};try{localStorage.setItem('cn_hist_student',JSON.stringify(state.student));}catch(e){}buildCourse();go('course');
 }
 /* 課題 → 範圍（考問重點）對應；新增課題只需在此加一項，題目按 topic 自動歸入 */
 const COURSES = [
@@ -1144,6 +1145,15 @@ const COURSES = [
 
 function buildCourse(){
   const box=document.getElementById('courseChips');box.innerHTML='';
+  const sess=sessGet();
+  if(sess){
+    const done=sess.answers.filter(a=>a!==null).length;
+    const rc=document.createElement('div');rc.className='course-card';
+    rc.style.borderColor='var(--cinnabar)';rc.style.borderStyle='dashed';
+    rc.innerHTML='<div class="course-name">\u25b6 繼續上次練習</div><div class="course-meta">'+esc(sess.course||'')+' · 已作答 '+done+' / '+sess.ids.length+' 題</div>';
+    rc.onclick=resumeSession;
+    box.appendChild(rc);
+  }
   const wbN=wbGet().length;
   if(wbN>0){
     const wb=document.createElement('div');wb.className='course-card';
@@ -1221,6 +1231,7 @@ function renderQ(){
   else{ex.classList.remove('show');ex.innerHTML='';}
   document.getElementById('btnPrev').disabled=(state.cur===0);
   document.getElementById('btnNext').textContent=(state.cur===state.pool.length-1)?'交卷':'下一題';
+  sessSave();
 }
 function answer(i){state.answers[state.cur]=i;const q=state.pool[state.cur];if(q&&typeof q._id==='number'){if(i===q.answer)wbRemove(q._id);else wbAdd(q._id);}document.getElementById('qScore').textContent=score();renderQ();}
 function score(){return state.pool.reduce((s,q,i)=>s+(state.answers[i]===q.answer?1:0),0);}
@@ -1238,6 +1249,7 @@ async function finish(){
   document.getElementById('resVerdict').textContent=v;
   document.getElementById('resSub').textContent=sub;
   if(state.course!=='錯題本'){await saveScore({name:state.student.name,cls:state.student.cls,no:state.student.no,score:sc,total:total,pct:pct,topic:(state.course||"未指定"),date:new Date().toISOString()});}
+  sessClear();
   go('result');
 }
 function reviewWrong(){
@@ -1259,6 +1271,23 @@ function startWrongBook(){
   state.pool=pool;state.perms=pool.map(()=>shuffle([0,1,2,3]));
   state.answers=new Array(pool.length).fill(null);state.cur=0;
   go('quiz');renderQ();
+}
+/* ===================== 上次練習進度（本機儲存，按學生分開） ===================== */
+function sessKey(){const s=state.student;return 'cn_hist_session_'+(s?(s.cls+'_'+s.no+'_'+s.name):'guest');}
+function sessSave(){try{if(!state.pool.length)return;localStorage.setItem(sessKey(),JSON.stringify({course:state.course,ids:state.pool.map(q=>q._id),perms:state.perms,answers:state.answers,cur:state.cur,ts:Date.now()}));}catch(e){}}
+function sessGet(){try{const v=localStorage.getItem(sessKey());if(!v)return null;const s=JSON.parse(v);if(!s||!Array.isArray(s.ids)||s.ids.length===0)return null;if(!s.ids.every(i=>Number.isInteger(i)&&i>=0&&i<QUESTIONS.length))return null;return s;}catch(e){return null;}}
+function sessClear(){try{localStorage.removeItem(sessKey());}catch(e){}}
+function resumeSession(){
+  const s=sessGet();if(!s){alert('沒有可繼續的練習');buildCourse();return;}
+  state.course=s.course;
+  state.pool=s.ids.map(i=>QUESTIONS[i]);
+  state.perms=(Array.isArray(s.perms)&&s.perms.length===s.ids.length)?s.perms:state.pool.map(()=>shuffle([0,1,2,3]));
+  state.answers=(Array.isArray(s.answers)&&s.answers.length===s.ids.length)?s.answers:new Array(s.ids.length).fill(null);
+  state.cur=Math.min(Math.max(0,s.cur|0),s.ids.length-1);
+  go('quiz');renderQ();
+}
+function exitQuiz(){
+  if(confirm('退出練習？進度已自動保存，可在課題頁「繼續上次練習」接續。')){buildCourse();go('course');}
 }
 const LB_KEY='cn_history_leaderboard_xizhou';
 
@@ -1350,6 +1379,7 @@ async function openLeaderboard(){
 }
 function closeLeaderboard(){document.getElementById('lbModal').classList.remove('show');}
 function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+try{const s=JSON.parse(localStorage.getItem('cn_hist_student')||'null');if(s){document.getElementById('inName').value=s.name||'';document.getElementById('inClass').value=s.cls||'';document.getElementById('inNo').value=s.no||'';}}catch(e){}
 document.getElementById('lbModal').addEventListener('click',e=>{if(e.target.id==='lbModal')closeLeaderboard();});
 </script>
 </body>
