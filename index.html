@@ -80,6 +80,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .option.wrong{background:rgba(178,58,53,.12);border-color:var(--wrong);}
 .option.wrong .mk{color:var(--wrong);}
 .option.locked{cursor:default;}
+.option.picked{border-color:var(--cinnabar);background:rgba(168,50,45,.10);}
 .explain{margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(168,133,63,.12);border-left:4px solid var(--gold);font-size:14.5px;line-height:1.65;display:none;}
 .explain.show{display:block;animation:fade .35s;}
 .explain b{color:var(--cinnabar-deep);}
@@ -154,6 +155,11 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
       <div class="chip" data-c="40">40 題</div>
       <div class="chip" data-c="all">全部</div>
     </div>
+    <div class="section-label" style="margin-top:24px">作答模式</div>
+    <div class="chips" id="modeChips">
+      <div class="chip on" data-m="practice">練習模式 · 即時對答案</div>
+      <div class="chip" data-m="exam">測驗模式 · 交卷才對答案</div>
+    </div>
     <button class="btn btn-primary" style="margin-top:28px" onclick="startQuiz()">開始作答</button>
     <div class="foot" id="poolInfo"></div>
   </section>
@@ -161,7 +167,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   <section id="screen-quiz" class="screen">
     <div class="topbar"><button class="back" onclick="exitQuiz()">‹ 退出</button><h2 style="font-size:17px">作答中</h2><span style="width:40px"></span></div>
     <div class="progress-wrap">
-      <div class="progress-meta"><span id="qPos">第 1 / 1 題</span><span class="score">得分 <b id="qScore">0</b></span></div>
+      <div class="progress-meta"><span id="qPos">第 1 / 1 題</span><span class="score" id="scoreWrap">得分 <b id="qScore">0</b></span><span class="score" id="timeWrap" style="display:none">用時 <b id="qTime">0:00</b></span></div>
       <div class="progress-bar"><i id="qBar" style="width:0%"></i></div>
     </div>
     <div id="qTopic" class="q-topic"></div>
@@ -1115,7 +1121,7 @@ const QUESTIONS = [
 
 /* ===================== 系統邏輯 ===================== */
 QUESTIONS.forEach((q,i)=>q._id=i); // 每題固定編號（題庫只增不減，編號穩定）
-const state={student:null,course:null,topics:[],count:30,pool:[],answers:[],cur:0,perms:[]};
+const state={student:null,course:null,topics:[],count:30,pool:[],answers:[],cur:0,perms:[],mode:'practice',finished:false,t0:0,baseElapsed:0};
 const MARKS=['A','B','C','D','E'];
 
 function go(name){
@@ -1150,7 +1156,7 @@ function buildCourse(){
     const done=sess.answers.filter(a=>a!==null).length;
     const rc=document.createElement('div');rc.className='course-card';
     rc.style.borderColor='var(--cinnabar)';rc.style.borderStyle='dashed';
-    rc.innerHTML='<div class="course-name">\u25b6 繼續上次練習</div><div class="course-meta">'+esc(sess.course||'')+' · 已作答 '+done+' / '+sess.ids.length+' 題</div>';
+    rc.innerHTML='<div class="course-name">\u25b6 繼續上次練習</div><div class="course-meta">'+esc(sess.course||'')+(sess.mode==='exam'?' · 測驗模式':'')+' · 已作答 '+done+' / '+sess.ids.length+' 題</div>';
     rc.onclick=resumeSession;
     box.appendChild(rc);
   }
@@ -1187,6 +1193,9 @@ function buildSetup(){
   document.querySelectorAll('#countChips .chip').forEach(c=>{
     c.onclick=()=>{document.querySelectorAll('#countChips .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');state.count=c.dataset.c;};
   });
+  document.querySelectorAll('#modeChips .chip').forEach(c=>{
+    c.onclick=()=>{document.querySelectorAll('#modeChips .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');state.mode=c.dataset.m;};
+  });
   syncTopics();
 }
 function syncTopics(){
@@ -1205,13 +1214,18 @@ function startQuiz(){
   pool=shuffle([...pool]);
   if(state.count!=='all')pool=pool.slice(0,Math.min(parseInt(state.count),pool.length));
   state.pool=pool;state.perms=pool.map(()=>shuffle([0,1,2,3]));state.answers=new Array(pool.length).fill(null);state.cur=0;
+  state.finished=false;stopTimer();state.baseElapsed=0;state.t0=0;if(state.mode==='exam')startTimer();
   go('quiz');renderQ();
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function renderQ(){
   const q=state.pool[state.cur],ans=state.answers[state.cur];
+  const examLive=(state.mode==='exam'&&!state.finished);
+  const reveal=state.finished||(state.mode!=='exam'&&ans!==null);
   document.getElementById('qPos').textContent='第 '+(state.cur+1)+' / '+state.pool.length+' 題';
-  document.getElementById('qScore').textContent=score();
+  const sw=document.getElementById('scoreWrap'),tw=document.getElementById('timeWrap');
+  if(examLive){sw.style.display='none';tw.style.display='';document.getElementById('qTime').textContent=fmtTime(elapsedNow());}
+  else{sw.style.display='';tw.style.display='none';document.getElementById('qScore').textContent=score();}
   document.getElementById('qBar').style.width=((state.cur)/state.pool.length*100)+'%';
   document.getElementById('qTopic').textContent=q.topic;
   document.getElementById('qText').textContent=q.q;
@@ -1222,23 +1236,33 @@ function renderQ(){
     const mk=document.createElement('span');mk.className='mk';mk.textContent=MARKS[j];
     const tx=document.createElement('span');tx.textContent=q.options[oi];
     el.appendChild(mk);el.appendChild(tx);
-    if(ans!==null){el.classList.add('locked');if(oi===q.answer)el.classList.add('correct');else if(oi===ans)el.classList.add('wrong');}
+    if(reveal){el.classList.add('locked');if(oi===q.answer)el.classList.add('correct');else if(oi===ans)el.classList.add('wrong');}
+    else if(examLive){if(oi===ans)el.classList.add('picked');el.onclick=()=>answer(oi);}
     else{el.onclick=()=>answer(oi);}
     ob.appendChild(el);
   });
   const ex=document.getElementById('qExplain');
-  if(ans!==null){ex.innerHTML='<b>解析：</b>'+esc(q.explain);ex.classList.add('show');}
+  if(reveal){ex.innerHTML='<b>解析：</b>'+esc(q.explain);ex.classList.add('show');}
   else{ex.classList.remove('show');ex.innerHTML='';}
   document.getElementById('btnPrev').disabled=(state.cur===0);
-  document.getElementById('btnNext').textContent=(state.cur===state.pool.length-1)?'交卷':'下一題';
+  document.getElementById('btnNext').textContent=(state.cur===state.pool.length-1)?(state.finished?'返回成績':'交卷'):'下一題';
   sessSave();
 }
-function answer(i){state.answers[state.cur]=i;const q=state.pool[state.cur];if(q&&typeof q._id==='number'){if(i===q.answer)wbRemove(q._id);else wbAdd(q._id);}document.getElementById('qScore').textContent=score();renderQ();}
+function answer(i){if(state.finished)return;state.answers[state.cur]=i;const q=state.pool[state.cur];if(state.mode!=='exam'&&q&&typeof q._id==='number'){if(i===q.answer)wbRemove(q._id);else wbAdd(q._id);}renderQ();}
 function score(){return state.pool.reduce((s,q,i)=>s+(state.answers[i]===q.answer?1:0),0);}
 function prevQ(){if(state.cur>0){state.cur--;renderQ();}}
-function nextQ(){if(state.cur<state.pool.length-1){state.cur++;renderQ();}else finish();}
+function nextQ(){if(state.cur<state.pool.length-1){state.cur++;renderQ();}else if(state.finished){go('result');}else finish();}
 async function finish(){
+  if(state.finished){go('result');return;}
+  if(state.mode==='exam'){
+    const un=state.answers.filter(a=>a===null).length;
+    if(un>0&&!confirm('尚有 '+un+' 題未作答，未答將視為錯誤。確定交卷？'))return;
+  }
+  stopTimer();
   const sc=score(),total=state.pool.length,pct=Math.round(sc/total*100);
+  if(state.mode==='exam'){
+    state.pool.forEach((q,i)=>{if(typeof q._id==='number'){if(state.answers[i]===q.answer)wbRemove(q._id);else wbAdd(q._id);}});
+  }
   document.getElementById('resScore').textContent=sc+'/'+total;
   document.getElementById('resPct').textContent=pct+'%';
   const ring=document.getElementById('scoreRing');
@@ -1247,8 +1271,10 @@ async function finish(){
   else if(pct>=60){col='var(--gold)';v='合格達標';sub='大致掌握，仍有提升空間。';}
   ring.style.background=col;
   document.getElementById('resVerdict').textContent=v;
+  if(state.mode==='exam')sub+=' · 用時 '+fmtTime(state.baseElapsed);
   document.getElementById('resSub').textContent=sub;
   if(state.course!=='錯題本'){await saveScore({name:state.student.name,cls:state.student.cls,no:state.student.no,score:sc,total:total,pct:pct,topic:(state.course||"未指定"),date:new Date().toISOString()});}
+  state.finished=true;
   sessClear();
   go('result');
 }
@@ -1267,14 +1293,23 @@ function startWrongBook(){
   const ids=wbGet();
   if(ids.length===0){alert('錯題本是空的——先去練習吧！');return;}
   let pool=shuffle(ids.map(i=>QUESTIONS[i]));
-  state.course='錯題本';
+  state.course='錯題本';state.mode='practice';
   state.pool=pool;state.perms=pool.map(()=>shuffle([0,1,2,3]));
   state.answers=new Array(pool.length).fill(null);state.cur=0;
+  state.finished=false;stopTimer();state.baseElapsed=0;state.t0=0;
   go('quiz');renderQ();
 }
+/* ===================== 測驗模式計時 ===================== */
+let timerInt=null;
+function elapsedNow(){return (state.baseElapsed||0)+(state.t0?Math.floor((Date.now()-state.t0)/1000):0);}
+function fmtTime(s){s=Math.max(0,s|0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function startTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}state.t0=Date.now();
+  timerInt=setInterval(()=>{const el=document.getElementById('qTime');if(el)el.textContent=fmtTime(elapsedNow());sessSave();},1000);}
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}if(state.t0){state.baseElapsed=elapsedNow();state.t0=0;}}
+
 /* ===================== 上次練習進度（本機儲存，按學生分開） ===================== */
 function sessKey(){const s=state.student;return 'cn_hist_session_'+(s?(s.cls+'_'+s.no+'_'+s.name):'guest');}
-function sessSave(){try{if(!state.pool.length)return;localStorage.setItem(sessKey(),JSON.stringify({course:state.course,ids:state.pool.map(q=>q._id),perms:state.perms,answers:state.answers,cur:state.cur,ts:Date.now()}));}catch(e){}}
+function sessSave(){try{if(!state.pool.length||state.finished)return;localStorage.setItem(sessKey(),JSON.stringify({course:state.course,mode:state.mode,elapsed:elapsedNow(),ids:state.pool.map(q=>q._id),perms:state.perms,answers:state.answers,cur:state.cur,ts:Date.now()}));}catch(e){}}
 function sessGet(){try{const v=localStorage.getItem(sessKey());if(!v)return null;const s=JSON.parse(v);if(!s||!Array.isArray(s.ids)||s.ids.length===0)return null;if(!s.ids.every(i=>Number.isInteger(i)&&i>=0&&i<QUESTIONS.length))return null;return s;}catch(e){return null;}}
 function sessClear(){try{localStorage.removeItem(sessKey());}catch(e){}}
 function resumeSession(){
@@ -1284,10 +1319,14 @@ function resumeSession(){
   state.perms=(Array.isArray(s.perms)&&s.perms.length===s.ids.length)?s.perms:state.pool.map(()=>shuffle([0,1,2,3]));
   state.answers=(Array.isArray(s.answers)&&s.answers.length===s.ids.length)?s.answers:new Array(s.ids.length).fill(null);
   state.cur=Math.min(Math.max(0,s.cur|0),s.ids.length-1);
+  state.mode=(s.mode==='exam')?'exam':'practice';
+  state.finished=false;
+  stopTimer();state.baseElapsed=s.elapsed||0;state.t0=0;
+  if(state.mode==='exam')startTimer();
   go('quiz');renderQ();
 }
 function exitQuiz(){
-  if(confirm('退出練習？進度已自動保存，可在課題頁「繼續上次練習」接續。')){buildCourse();go('course');}
+  if(confirm('退出練習？進度已自動保存，可在課題頁「繼續上次練習」接續。')){stopTimer();sessSave();buildCourse();go('course');}
 }
 const LB_KEY='cn_history_leaderboard_xizhou';
 
