@@ -125,7 +125,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
     </div>
     <button class="btn btn-primary" onclick="go('register')">開始練習</button>
     <div class="btn-row"><button class="btn btn-ghost" onclick="openLeaderboard()">🏆 排行榜</button></div>
-    <div class="foot">DSE 程度 · 共 908 題</div>
+    <div class="foot">DSE 程度 · 共 908 題 · v23 · 更新於 2026-06-13</div>
   </section>
 
   <section id="screen-register" class="screen">
@@ -146,7 +146,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   <section id="screen-setup" class="screen">
     <div class="topbar"><button class="back" onclick="go('course')">‹ 返回</button><h2>選擇範圍</h2><span style="width:40px"></span></div>
     <div class="section-label" id="courseLabel" style="letter-spacing:1px;justify-content:flex-start;color:var(--cinnabar)"></div>
-    <div class="section-label">範圍（考問重點）<span class="all" onclick="toggleAllTopics()">全選</span></div>
+    <div class="section-label" id="topicLabel">範圍（考問重點）<span class="all" onclick="toggleAllTopics()">全選</span></div>
     <div class="chips" id="topicChips"></div>
     <div class="section-label" style="margin-top:24px">題目數量</div>
     <div class="count-grid" id="countChips">
@@ -155,7 +155,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
       <div class="chip" data-c="40">40 題</div>
       <div class="chip" data-c="all">全部</div>
     </div>
-    <div class="section-label" style="margin-top:24px">作答模式</div>
+    <div class="section-label" style="margin-top:24px" id="modeLabel">作答模式</div>
     <div class="chips" id="modeChips">
       <div class="chip on" data-m="practice">練習模式 · 即時對答案</div>
       <div class="chip" data-m="exam">測驗模式 · 交卷才對答案</div>
@@ -1121,7 +1121,7 @@ const QUESTIONS = [
 
 /* ===================== 系統邏輯 ===================== */
 QUESTIONS.forEach((q,i)=>q._id=i); // 每題固定編號（題庫只增不減，編號穩定）
-const state={student:null,course:null,topics:[],count:30,pool:[],answers:[],cur:0,perms:[],mode:'practice',finished:false,t0:0,baseElapsed:0};
+const state={student:null,course:null,topics:[],count:30,pool:[],answers:[],cur:0,perms:[],mode:'practice',finished:false,t0:0,baseElapsed:0,mock:false};
 const MARKS=['A','B','C','D','E'];
 
 function go(name){
@@ -1168,6 +1168,11 @@ function buildCourse(){
     wb.onclick=startWrongBook;
     box.appendChild(wb);
   }
+  const mk=document.createElement('div');mk.className='course-card';
+  mk.style.borderColor='var(--gold)';
+  mk.innerHTML='<div class="course-name">\ud83c\udfaf 模擬測驗（全題庫）</div><div class="course-meta">跨課題隨機抽題 · 測驗模式 · 計時</div>';
+  mk.onclick=startMockSetup;
+  box.appendChild(mk);
   COURSES.forEach(co=>{
     const tps=co.topics.filter(t=>QUESTIONS.some(q=>q.topic===t));
     const cnt=QUESTIONS.filter(q=>tps.includes(q.topic)).length;
@@ -1178,9 +1183,22 @@ function buildCourse(){
   });
 }
 function selectCourse(name){
-  state.course=name;buildSetup();go('setup');
+  state.mock=false;state.course=name;buildSetup();go('setup');
+}
+function startMockSetup(){
+  state.mock=true;state.course='模擬測驗（全題庫）';state.mode='exam';
+  buildSetup();go('setup');
 }
 function buildSetup(){
+  const tl=document.getElementById('topicLabel'),tc=document.getElementById('topicChips');
+  const ml=document.getElementById('modeLabel'),mc=document.getElementById('modeChips');
+  if(state.mock){
+    document.getElementById('courseLabel').textContent='模擬測驗：跨課題從全題庫隨機抽題（測驗模式 · 計時）';
+    tl.style.display='none';tc.style.display='none';ml.style.display='none';mc.style.display='none';
+    state.topics=[...new Set(QUESTIONS.map(q=>q.topic))];
+    state.mode='exam';
+  }else{
+  tl.style.display='';tc.style.display='';ml.style.display='';mc.style.display='';
   const co=COURSES.find(c=>c.name===state.course)||COURSES[0];
   const topics=co.topics.filter(t=>QUESTIONS.some(q=>q.topic===t));
   state.topics=[...topics];
@@ -1190,6 +1208,8 @@ function buildSetup(){
     const el=document.createElement('div');el.className='chip on';el.textContent=t;
     el.onclick=()=>{el.classList.toggle('on');syncTopics();};box.appendChild(el);
   });
+  const on=document.querySelector('#modeChips .chip.on');state.mode=on?(on.dataset.m||'practice'):'practice';
+  }
   document.querySelectorAll('#countChips .chip').forEach(c=>{
     c.onclick=()=>{document.querySelectorAll('#countChips .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');state.count=c.dataset.c;};
   });
@@ -1199,6 +1219,11 @@ function buildSetup(){
   syncTopics();
 }
 function syncTopics(){
+  if(state.mock){
+    state.topics=[...new Set(QUESTIONS.map(q=>q.topic))];
+    document.getElementById('poolInfo').textContent='全題庫共 '+QUESTIONS.length+' 題，將隨機抽選';
+    return;
+  }
   state.topics=[...document.querySelectorAll('#topicChips .chip.on')].map(c=>c.textContent);
   const n=QUESTIONS.filter(q=>state.topics.includes(q.topic)).length;
   document.getElementById('poolInfo').textContent='可選題庫共 '+n+' 題';
